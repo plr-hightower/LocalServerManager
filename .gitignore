@@ -1,3 +1,6 @@
+#images are too heavy, hence they will be manually populated
+images/*.tar
+
 # Logs
 logs
 *.log

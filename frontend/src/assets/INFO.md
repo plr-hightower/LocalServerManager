@@ -1,0 +1,1 @@
+The assets folder stores images, icons used for UI displaying.
