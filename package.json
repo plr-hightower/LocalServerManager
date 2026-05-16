@@ -1,22 +1,25 @@
 {
-    "name": "server-project",
-    "private": true,
-    "workspaces": [
-        "frontend",
-        "backend",
-        "shared"
-    ],
-    "dependencies": {
-        "dockerode": "^4.0.10",
-        "express": "^5.2.1"
-    },
-    "scripts": {
-        "dev": "vite",
-        "build": "vite build",
-        "preview": "vite preview"
-    },
-    "devDependencies": {
-        "@types/dockerode": "^4.0.1",
-        "vite": "^5.4.21"
-    }
+  "name": "server-project",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build:shared": "npm run build --workspace=shared",
+    "build:backend": "npm run build --workspace=backend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:all": "npm run build:shared && npm run build:backend && npm run build:frontend"
+  },
+  "dependencies": {
+    "all": "^0.0.0",
+    "dockerode": "^4.0.10",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^4.0.1"
+  }
 }

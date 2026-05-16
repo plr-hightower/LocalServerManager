@@ -1,6 +1,6 @@
 import { IGameService } from "../../interfaces/IGameService";
-import { GameManifestS, GameManifestSchema } from "../../schemas/game.schema";
-import { ServerSettingsS } from "../../schemas/server.schema";
+import { GameManifestS, GameManifestSchema } from "@hightower/shared";
+import { ServerSettingsS } from "@hightower/shared";
 
 // ONLY THINGS THAT ARE UNIQUE TO MINECRAFT, This goes for all other files like this
 

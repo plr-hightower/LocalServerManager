@@ -1,12 +1,11 @@
 import type { NextFunction, Request,Response } from "express";
-import {CoreServerSettingsSchema,CoreServerSettingsS,GameE,GameEnum, ServerSettingsS, ServerSettingsSchema} from "../schemas/server.schema";
 import path from 'path';
 import {createContainer,stopContainer} from '../services/docker.service';
 import type { error } from "console";
 
 
 import { IGameService } from "../interfaces/IGameService";
-import { GameManifestS } from "../schemas/game.schema";
+import { GameE, GameManifestS, ServerSettingsS, ServerSettingsSchema } from '@hightower/shared';
 
 
 
@@ -24,7 +23,7 @@ const buildServer = async (req:Request, res:Response) => {
         const game:GameE = settings.core_settings.game_contrainer;
 
         // Here we import the game specific module from which we eventually get the game manifest
-        const module = await import(`../services/games/${game}.service.ts`);
+        const module = await import(`../services/games/${game}.service`);
 
         //Making sure that it respects the interface
         const gameService = module.GameService as IGameService;

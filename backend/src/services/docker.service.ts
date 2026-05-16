@@ -1,6 +1,5 @@
+import { GameManifestS, ServerSettingsS } from '@hightower/shared';
 import Docker, { Container } from 'dockerode';
-import { ServerSettingsS } from '../schemas/server.schema';
-import { GameManifestS } from '../schemas/game.schema';
 
 // Docker controller??
 const docker = new Docker();

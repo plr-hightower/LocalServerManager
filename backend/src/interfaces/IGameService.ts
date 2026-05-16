@@ -1,5 +1,4 @@
-import { GameManifestS } from "../schemas/game.schema";
-import { ServerSettingsS, ServerSettingsSchema } from "../schemas/server.schema"
+import { GameManifestS } from "@hightower/shared";
 
 export interface IGameService{
     getManifest(gameSettings: any): Promise<GameManifestS>;

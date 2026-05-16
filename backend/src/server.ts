@@ -1,16 +1,14 @@
 
 import { NextFunction, Request,Response } from "express";
 import path from 'path';
-import {createContainer,stopContainer} from './services/docker.service';
 import { error } from "console";
 //Good to know that serverRouter is a fuckass name that I decided on 
 //since the default export of server.routes is router and is alone type shit
 import serverRouter from "./routes/server.routes";
 
 import Docker, { Container } from 'dockerode';
-const docker = new Docker();
-const express = require('express');
-const morgan = require('morgan');
+import express from 'express';
+import morgan from 'morgan';
 
 const app = express();
 
