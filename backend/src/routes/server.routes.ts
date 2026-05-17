@@ -21,14 +21,7 @@ router.get("/:id/status",
     }
 )
 
-router.get("/listServers",
-    //TODO
-    async(req:Request,res:Response) => {
-        res.status(200).json({
-            help: "listServers"
-        })
-    }
-)
+router.get("/listServers", serverController.getServerList);
 
 router.get("/:id/start",
     //TODO

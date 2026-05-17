@@ -1,15 +1,17 @@
-import { CoreServerSettingsS, ServerSettingsS, ServerSettingsSchema, StatusE } from '@hightower/shared';
+import { CoreServerSettingsS, CoreServerSettingsSchema, ServerSettingsS, ServerSettingsSchema, StatusE } from '@hightower/shared';
 import { pool } from '../db/pool';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { Server } from 'http';
 
 export class DbService {
   
-  async getServerById(id: number): Promise< ServerSettingsS | null> {
+  async getServerById(id: number): Promise <ServerSettingsS | null> {
     const [rows] = await pool.execute<RowDataPacket[]>(
-      'SELECT * FROM game_servers WHERE server_id = ?', 
+      'SELECT * FROM servers WHERE server_id = ?', 
       [id]
     );
     if (rows.length === 0) return null;
+    // TO TEST
     return ServerSettingsSchema.parse(rows[0]);
   }
 
@@ -20,11 +22,12 @@ export class DbService {
 
       const [result] = await pool.execute<ResultSetHeader>(
         `INSERT INTO servers(
-          name, game_container, container_id, ram_alloc_mb, 
+          server_id, name, game_container, container_id, ram_alloc_mb, 
           max_num_players, status, host_port, default_host_port, 
-          created_by, game_settings
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          created_by, created_at, game_settings
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
+          core_settings.server_id,
           core_settings.name,
           core_settings.game_container, // Matches your schema's typo
           core_settings.container_id,
@@ -34,6 +37,7 @@ export class DbService {
           core_settings.host_port,
           core_settings.default_host_port ?? null,
           core_settings.created_by,
+          core_settings.created_at,
           gameSettingsJson
         ]
       );
@@ -51,5 +55,49 @@ export class DbService {
       [ status, serverId]
     );
     return result.affectedRows > 0;
+  }
+
+  async getServerList(): Promise<ServerSettingsS[] | null>{
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      'SELECT * FROM servers'
+    );
+    if(rows.length === 0){
+      return null;
+    }
+    let results:ServerSettingsS[] = [];
+    rows.forEach(element => {
+
+    let parsedGameSettings = {};
+    if (element.game_settings) {
+      try {
+        parsedGameSettings = typeof element.game_settings === 'string' 
+          ? JSON.parse(element.game_settings) 
+          : element.game_settings;
+      } catch (e) {
+        console.error("Failed to parse game_settings JSON:", e);
+      }
+    }
+
+    const transformedData = {
+      core_settings: {
+        server_id: element.server_id,
+        name: element.name,
+        game_container: element.game_container, 
+        container_id: element.container_id,
+        ram_alloc_mb: element.ram_alloc_mb,
+        max_num_players: element.max_num_players,
+        status: element.status,
+        host_port: element.host_port,
+        default_host_port: element.default_host_port,
+        created_by: element.created_by,
+        created_at: element.created_at
+      },
+      game_settings: parsedGameSettings
+    };
+
+    results.push(ServerSettingsSchema.parse(transformedData));
+  });
+
+  return results;
   }
 }

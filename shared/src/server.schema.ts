@@ -5,10 +5,10 @@ export const RamAllocMbEnum = z.literal([ 1024, 2048, 4096, 8192]);
 export const StatusEnum = z.enum(["started","starting","stopped","stopping","error"]);
 
 export const CoreServerSettingsSchema = z.object({
-    server_id: z.number().int(),
+    server_id: z.number().int().default(-1).optional(),
     name: z.string(),
     game_container: GameEnum,
-    container_id: z.string().length(64),
+    container_id: z.string().max(64),
     ram_alloc_mb: RamAllocMbEnum,
     max_num_players : z.int().min(1).max(10).default(5),
     status: StatusEnum.default("starting"),

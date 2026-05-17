@@ -7,6 +7,7 @@ import type { error } from "console";
 import { IGameService } from "../interfaces/IGameService";
 import { GameE, GameManifestS, ServerSettingsS, ServerSettingsSchema } from '@hightower/shared';
 import { DbService } from "../services/db.service";
+import { nameToInt } from "../services/serverUtils.service";
 
 
 
@@ -14,10 +15,22 @@ const buildServer = async (req:Request, res:Response) => {
     try {
 
         const db = new DbService();
-        
+
         const settings:ServerSettingsS = ServerSettingsSchema.parse(req.body);
         console.log("successfully parsed");
         // TODO: handle error from the coreserversettings in the validator
+
+
+        const candidateServerId:number = nameToInt(settings.core_settings.name);
+
+
+        if(db.getServerById(candidateServerId) === null){
+            //Find the proper status eventually
+            res.status(200).json("Server name already exists");
+        }
+
+        //Set the server_id
+        settings.core_settings.server_id = candidateServerId;
 
         // Here we extract what game it is
         const game:GameE = settings.core_settings.game_container;
@@ -41,12 +54,32 @@ const buildServer = async (req:Request, res:Response) => {
 
         const insertId:number = await db.createServer(settings);
         console.log(insertId);
+        res.status(200).json(insertId);
 
-
-        //DB entry TODO
 
     } catch (err: any) {
         console.error("", err.message);
+
+        // If container name already exists, Docker returns 409
+        if (err.statusCode === 409) {
+            return res.status(409).json({ error: `The name "${req.body.name}" is already in use.` });
+        }
+
+        // Generic Internal Error
+        res.status(500).json({ 
+        error: "Failed to create Minecraft server", 
+        details: err.message 
+        });
+    }
+} 
+
+const getServerList = async (req:Request, res:Response) => {
+    try {
+
+        const db:DbService = new DbService();
+        res.status(200).json(await db.getServerList());
+
+    } catch(err:any) {
 
         // If container name already exists, Docker returns 409
         if (err.statusCode === 409) {
@@ -59,8 +92,8 @@ const buildServer = async (req:Request, res:Response) => {
         details: err.message 
         });
     }
-} 
-
+}
 export const serverController = {
-    buildServer
+    buildServer,
+    getServerList
 }
