@@ -7,7 +7,7 @@ export const StatusEnum = z.enum(["started","starting","stopped","stopping","err
 export const CoreServerSettingsSchema = z.object({
     server_id: z.number().int(),
     name: z.string(),
-    game_contrainer: GameEnum,
+    game_container: GameEnum,
     container_id: z.string().length(64),
     ram_alloc_mb: RamAllocMbEnum,
     max_num_players : z.int().min(1).max(10).default(5),

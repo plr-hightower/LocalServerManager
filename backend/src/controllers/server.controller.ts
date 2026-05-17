@@ -6,21 +6,21 @@ import type { error } from "console";
 
 import { IGameService } from "../interfaces/IGameService";
 import { GameE, GameManifestS, ServerSettingsS, ServerSettingsSchema } from '@hightower/shared';
+import { DbService } from "../services/db.service";
 
 
 
 const buildServer = async (req:Request, res:Response) => {
     try {
 
+        const db = new DbService();
         
         const settings:ServerSettingsS = ServerSettingsSchema.parse(req.body);
         console.log("successfully parsed");
         // TODO: handle error from the coreserversettings in the validator
 
-        // DB ENTRY TODO
-
         // Here we extract what game it is
-        const game:GameE = settings.core_settings.game_contrainer;
+        const game:GameE = settings.core_settings.game_container;
 
         // Here we import the game specific module from which we eventually get the game manifest
         const module = await import(`../services/games/${game}.service`);
@@ -36,8 +36,11 @@ const buildServer = async (req:Request, res:Response) => {
         // What I should do is have a func that returns the default port for that specific game to later be mapped in the docker container instantiation
 
 
-        settings.core_settings.container_id = await createContainer(settings,result);
+        settings.core_settings.container_id = "gonicideetpesticide";
+        //await createContainer(settings,result);
 
+        const insertId:number = await db.createServer(settings);
+        console.log(insertId);
 
 
         //DB entry TODO

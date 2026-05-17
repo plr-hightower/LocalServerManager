@@ -18,8 +18,7 @@ export MIGRATIONS_DIR="${MIGRATIONS_DIR:-$PROJECT_ROOT/backend/migrations}"
 export IMAGES_DIR="${IMAGES_DIR:-$PROJECT_ROOT/images}"
 
 # 4. Fallback defaults (Used only if they aren't explicitly set in your .env)
-export DB_USER="${DB_USER:-root}"
+export DB_USER="${DB_USER:-hightower-admin}"
 export DB_NAME="${DB_NAME:-hightower}"
 export DB_EXPOSE_PORT="${DB_EXPOSE_PORT:-3306}"
 export BACKEND_PORT="${BACKEND_PORT:-8080}"
-# Note: $DB_PASSWORD will be pulled straight from your loaded .env file securely!

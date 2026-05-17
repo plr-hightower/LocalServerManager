@@ -1,50 +1,55 @@
+import { CoreServerSettingsS, ServerSettingsS, ServerSettingsSchema, StatusE } from '@hightower/shared';
 import { pool } from '../db/pool';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 export class DbService {
   
-//   // 1. Fetching a server by ID safely
-//   async getServerById(id: number): Promise<GameServer | null> {
-//     const [rows] = await pool.execute<RowDataPacket[]>(
-//       'SELECT * FROM game_servers WHERE server_id = ?', 
-//       [id]
-//     );
+  async getServerById(id: number): Promise< ServerSettingsS | null> {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      'SELECT * FROM game_servers WHERE server_id = ?', 
+      [id]
+    );
+    if (rows.length === 0) return null;
+    return ServerSettingsSchema.parse(rows[0]);
+  }
 
-//     if (rows.length === 0) return null;
+  async createServer(server: ServerSettingsS): Promise<number> {
+    try {
+      const { core_settings, game_settings } = server;
+      const gameSettingsJson = JSON.stringify(game_settings ?? {});
 
-//     // Use Zod parsing to clean, parse, validate, and convert timestamps back to raw JS Dates
-//     return CoreServerSettingsSchema.parse(rows[0]);
-//   }
+      const [result] = await pool.execute<ResultSetHeader>(
+        `INSERT INTO servers(
+          name, game_container, container_id, ram_alloc_mb, 
+          max_num_players, status, host_port, default_host_port, 
+          created_by, game_settings
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          core_settings.name,
+          core_settings.game_container, // Matches your schema's typo
+          core_settings.container_id,
+          core_settings.ram_alloc_mb,
+          core_settings.max_num_players ?? 5,
+          core_settings.status ?? 'starting',
+          core_settings.host_port,
+          core_settings.default_host_port ?? null,
+          core_settings.created_by,
+          gameSettingsJson
+        ]
+      );
 
-//   // 2. Creating a new game instance entries
-//   async createServer(server: NewGameServerInput): Promise<number> {
-//     const [result] = await pool.execute<ResultSetHeader>(
-//       `INSERT INTO game_servers (
-//         name, game_container, container_id, ram_alloc_mb, 
-//         max_num_players, status, host_port, default_host_port, created_by
-//        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//       [
-//         server.name,
-//         server.game_container,
-//         server.container_id,
-//         server.ram_alloc_mb,
-//         server.max_num_players ?? 5,
-//         server.status ?? 'starting',
-//         server.host_port,
-//         server.default_host_port || null, // Convert optional undefined variables to SQL NULL values
-//         server.created_by
-//       ]
-//     );
+      return result.insertId;
+    } catch (error) {
+      console.error('Failed to create game server in DB:', error);
+      throw error;
+    }
+  }
 
-//     return result.insertId;
-//   }
-
-//   // 3. Modifying active server status shifts (e.g., stopping/running)
-//   async updateContainerStatus(id: number, containerId: string, status: string): Promise<boolean> {
-//     const [result] = await pool.execute<ResultSetHeader>(
-//       'UPDATE game_servers SET container_id = ?, status = ? WHERE server_id = ?',
-//       [containerId, status, id]
-//     );
-//     return result.affectedRows > 0;
-//   }
+  async updateContainerStatus(serverId: number, status: StatusE): Promise<boolean> {
+    const [result] = await pool.execute<ResultSetHeader>(
+      'UPDATE game_servers SET status = ? WHERE server_id = ?',
+      [ status, serverId]
+    );
+    return result.affectedRows > 0;
+  }
 }
