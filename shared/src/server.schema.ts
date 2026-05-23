@@ -5,7 +5,7 @@ export const RamAllocMbEnum = z.literal([ 1024, 2048, 4096, 8192]);
 export const StatusEnum = z.enum(["started","starting","stopped","stopping","error"]);
 
 export const CoreServerSettingsSchema = z.object({
-    server_id: z.number().int().default(-1).optional(),
+    server_id: z.number().int().optional(),
     name: z.string(),
     game_container: GameEnum,
     container_id: z.string().max(64),

@@ -1,13 +1,8 @@
 import type { NextFunction, Request,Response } from "express";
-import path from 'path';
-import {createContainer,stopContainer} from '../services/docker.service';
-import type { error } from "console";
-
 
 import { IGameService } from "../interfaces/IGameService";
 import { GameE, GameManifestS, ServerSettingsS, ServerSettingsSchema } from '@hightower/shared';
 import { DbService } from "../services/db.service";
-import { nameToInt } from "../services/serverUtils.service";
 
 
 
@@ -19,18 +14,16 @@ const buildServer = async (req:Request, res:Response) => {
         const settings:ServerSettingsS = ServerSettingsSchema.parse(req.body);
         console.log("successfully parsed");
         // TODO: handle error from the coreserversettings in the validator
+        // ServerID is set automatically
 
 
-        const candidateServerId:number = nameToInt(settings.core_settings.name);
 
-
-        if(db.getServerById(candidateServerId) === null){
+        if(await db.getServerByName(settings.core_settings.name) !== null){
             //Find the proper status eventually
-            res.status(200).json("Server name already exists");
+            res.status(404).json("Server name already exists");
+            return;
         }
 
-        //Set the server_id
-        settings.core_settings.server_id = candidateServerId;
 
         // Here we extract what game it is
         const game:GameE = settings.core_settings.game_container;

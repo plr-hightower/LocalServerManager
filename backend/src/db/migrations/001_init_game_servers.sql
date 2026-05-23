@@ -2,7 +2,7 @@ START TRANSACTION;
 
 CREATE TABLE servers (
     server_id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL UNIQUE,
     game_container ENUM('minecraft', 'valheim') NOT NULL,
     container_id CHAR(64) NOT NULL,
     ram_alloc_mb INT NOT NULL,

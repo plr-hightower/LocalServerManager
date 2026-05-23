@@ -5,14 +5,13 @@ import { Server } from 'http';
 
 export class DbService {
   
-  async getServerById(id: number): Promise <ServerSettingsS | null> {
+  async getServerByName(name: string): Promise<ServerSettingsS | null> {
     const [rows] = await pool.execute<RowDataPacket[]>(
-      'SELECT * FROM servers WHERE server_id = ?', 
-      [id]
+      'SELECT * FROM servers WHERE name = ?',
+      [name]
     );
     if (rows.length === 0) return null;
-    // TO TEST
-    return ServerSettingsSchema.parse(rows[0]);
+    return rowToServerSettings(rows[0]);
   }
 
   async createServer(server: ServerSettingsS): Promise<number> {
@@ -22,12 +21,11 @@ export class DbService {
 
       const [result] = await pool.execute<ResultSetHeader>(
         `INSERT INTO servers(
-          server_id, name, game_container, container_id, ram_alloc_mb, 
+          name, game_container, container_id, ram_alloc_mb, 
           max_num_players, status, host_port, default_host_port, 
           created_by, created_at, game_settings
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          core_settings.server_id,
           core_settings.name,
           core_settings.game_container, // Matches your schema's typo
           core_settings.container_id,
@@ -67,37 +65,58 @@ export class DbService {
     let results:ServerSettingsS[] = [];
     rows.forEach(element => {
 
-    let parsedGameSettings = {};
-    if (element.game_settings) {
-      try {
-        parsedGameSettings = typeof element.game_settings === 'string' 
-          ? JSON.parse(element.game_settings) 
-          : element.game_settings;
-      } catch (e) {
-        console.error("Failed to parse game_settings JSON:", e);
+      let parsedGameSettings = {};
+      if (element.game_settings) {
+        try {
+          parsedGameSettings = typeof element.game_settings === 'string' 
+            ? JSON.parse(element.game_settings) 
+            : element.game_settings;
+        } catch (e) {
+          console.error("Failed to parse game_settings JSON:", e);
+        }
       }
-    }
 
-    const transformedData = {
-      core_settings: {
-        server_id: element.server_id,
-        name: element.name,
-        game_container: element.game_container, 
-        container_id: element.container_id,
-        ram_alloc_mb: element.ram_alloc_mb,
-        max_num_players: element.max_num_players,
-        status: element.status,
-        host_port: element.host_port,
-        default_host_port: element.default_host_port,
-        created_by: element.created_by,
-        created_at: element.created_at
-      },
-      game_settings: parsedGameSettings
-    };
+      const transformedData = {
+        core_settings: {
+          server_id: element.server_id,
+          name: element.name,
+          game_container: element.game_container, 
+          container_id: element.container_id,
+          ram_alloc_mb: element.ram_alloc_mb,
+          max_num_players: element.max_num_players,
+          status: element.status,
+          host_port: element.host_port,
+          default_host_port: element.default_host_port,
+          created_by: element.created_by,
+          created_at: element.created_at
+        },
+        game_settings: parsedGameSettings
+      };
 
-    results.push(ServerSettingsSchema.parse(transformedData));
-  });
+      results.push(ServerSettingsSchema.parse(transformedData));
+    });
 
-  return results;
+    return results;
   }
+
+}  
+function rowToServerSettings(row: RowDataPacket): ServerSettingsS {
+  return ServerSettingsSchema.parse({
+    core_settings: {
+      server_id:        row.server_id,
+      name:             row.name,
+      game_container:   row.game_container,
+      container_id:     row.container_id,
+      ram_alloc_mb:     row.ram_alloc_mb,
+      max_num_players:  row.max_num_players,
+      status:           row.status,
+      host_port:        row.host_port,
+      default_host_port: row.default_host_port,
+      created_by:       row.created_by,
+      created_at:       row.created_at,
+    },
+    game_settings: typeof row.game_settings === 'string'
+      ? JSON.parse(row.game_settings)
+      : row.game_settings,
+  });
 }
