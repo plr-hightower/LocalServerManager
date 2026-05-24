@@ -3,6 +3,7 @@ import type { NextFunction, Request,Response } from "express";
 import { IGameService } from "../interfaces/IGameService";
 import { GameE, GameManifestS, ServerSettingsS, ServerSettingsSchema } from '@hightower/shared';
 import { DbService } from "../services/db.service";
+import { ZodError } from "zod";
 
 
 
@@ -13,6 +14,7 @@ const buildServer = async (req:Request, res:Response) => {
 
         const settings:ServerSettingsS = ServerSettingsSchema.parse(req.body);
         console.log("successfully parsed");
+
         // TODO: handle error from the coreserversettings in the validator
         // ServerID is set automatically
 
@@ -20,8 +22,7 @@ const buildServer = async (req:Request, res:Response) => {
 
         if(await db.getServerByName(settings.core_settings.name) !== null){
             //Find the proper status eventually
-            res.status(404).json("Server name already exists");
-            return;
+            return res.status(400).json("Server name already exists");
         }
 
 
@@ -50,18 +51,16 @@ const buildServer = async (req:Request, res:Response) => {
         res.status(200).json(insertId);
 
 
-    } catch (err: any) {
-        console.error("", err.message);
+    } catch (err: unknown) {
+        console.error("", err);
 
-        // If container name already exists, Docker returns 409
-        if (err.statusCode === 409) {
-            return res.status(409).json({ error: `The name "${req.body.name}" is already in use.` });
+        if( err instanceof ZodError){
+            return res.status(400).json({error: "Invalid request body.", details: err.issues })
         }
 
-        // Generic Internal Error
         res.status(500).json({ 
-        error: "Failed to create Minecraft server", 
-        details: err.message 
+            error: "Failed to create Minecraft server", 
+            details: err
         });
     }
 } 
