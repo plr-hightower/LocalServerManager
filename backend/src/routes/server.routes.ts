@@ -1,19 +1,15 @@
 import { Router } from "express";
 import { NextFunction, Request,Response } from "express";
-import path from 'path';
-import {createContainer,stopContainer} from '../services/docker.service';
-import { error } from "console";
 
 
 import Docker, { Container } from 'dockerode';
 import { serverController } from "../controllers/server.controller";
 import { ServerSettingsSchema } from "@hightower/shared";
-import { $strip } from "zod/v4/core";
 import { validate } from "../services/validate.service";
 const docker = new Docker();
 const router:Router = Router();
 // here validator will run before buildserver, interesting shi
-router.post("/buildServer" , validate(ServerSettingsSchema),serverController.buildServer);
+router.post("/buildServer" ,validate(ServerSettingsSchema), serverController.buildServer);
 
 router.get("/:id/status",
     //TODO
