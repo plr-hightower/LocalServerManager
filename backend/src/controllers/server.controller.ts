@@ -2,7 +2,7 @@ import type { NextFunction, Request,Response } from "express";
 
 import { IGameService } from "../interfaces/IGameService";
 import { GameE, GameManifestS, ServerSettingsS, ServerSettingsSchema } from '@hightower/shared';
-import { DbService } from "../services/db.service";
+import { DbService } from "../repository/db.repository";
 import { ZodError } from "zod";
 
 
