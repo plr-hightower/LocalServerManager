@@ -22,6 +22,8 @@ async function createContainer(settings: ServerSettingsS, manifest: GameManifest
     const ExposedPorts: Record<string, {}> = {};
     const PortBindings: Record<string, Array<{ HostPort: string }>> = {};
 
+    // To be able to increment ports for different game servers (ex: 2 minecraft servers)
+    // I need a tracking section in the db to keep track of everything
     // Loop through the protocols (e.g., ["tcp", "udp"]) and bind each one
     for (const protocol of manifest.protocols) {
         const portKey = `${settings.core_settings.default_host_port}/${protocol}`;

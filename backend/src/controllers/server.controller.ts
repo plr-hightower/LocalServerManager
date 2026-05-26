@@ -1,9 +1,10 @@
 import type { NextFunction, Request,Response } from "express";
 
 import { IGameService } from "../interfaces/IGameService";
-import { GameE, GameManifestS, ServerSettingsS, ServerSettingsSchema } from '@hightower/shared';
+import { CreateServerRequestS, CreateServerRequestSchema, GameE, GameManifestS, ServerSettingsS, ServerSettingsSchema, StatusEnum } from '@hightower/shared';
 import { DbService } from "../repository/db.repository";
 import { ZodError } from "zod";
+import { createContainer } from "../services/docker.service";
 
 
 
@@ -12,11 +13,19 @@ const buildServer = async (req:Request, res:Response) => {
 
         const db = new DbService();
 
-        const settings:ServerSettingsS = ServerSettingsSchema.parse(req.body);
+        const requestSettings:CreateServerRequestS = CreateServerRequestSchema.parse(req.body);
         console.log("successfully parsed");
 
-        // TODO: handle error from the coreserversettings in the validator
-        // ServerID is set automatically
+        const settings:ServerSettingsS =  ServerSettingsSchema.parse({
+        ...requestSettings,
+        core_settings: {
+            ...requestSettings.core_settings,
+            container_id: "NOT GENERATED",
+            status: "starting",
+            created_at: new Date(),
+        }
+        });
+        // ServerID is set automatically by db
 
 
 
@@ -35,7 +44,7 @@ const buildServer = async (req:Request, res:Response) => {
         //Making sure that it respects the interface
         const gameService = module.GameService as IGameService;
 
-        console.log("hoooo close gang")
+        console.log("hoooo close gang");
 
         settings.core_settings.default_host_port = gameService.getDefaultPort();
         //Here we get the game specific env variables
@@ -44,7 +53,7 @@ const buildServer = async (req:Request, res:Response) => {
 
 
         settings.core_settings.container_id = "gonicideetpesticide";
-        //await createContainer(settings,result);
+        await createContainer(settings,result);
 
         const insertId:number = await db.createServer(settings);
         console.log(insertId);

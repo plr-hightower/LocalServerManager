@@ -1,6 +1,6 @@
-import { CoreServerSettingsS, CoreServerSettingsSchema, ServerSettingsS, ServerSettingsSchema, StatusE } from '@hightower/shared';
+import { CoreServerSettingsS, CoreServerSettingsSchema, GameE, ServerSettingsS, ServerSettingsSchema, StatusE } from '@hightower/shared';
 import { pool } from '../db/pool';
-import type { RowDataPacket, ResultSetHeader } from 'mysql2';
+import type { RowDataPacket, ResultSetHeader, FieldPacket } from 'mysql2';
 import { Server } from 'http';
 
 export class DbService {
@@ -12,6 +12,16 @@ export class DbService {
     );
     if (rows.length === 0) return null;
     return rowToServerSettings(rows[0]);
+  }
+
+  async getServersByGame(game_container:GameE): Promise<number> {
+    try{
+      const result:[RowDataPacket[],FieldPacket[]] = await pool.execute("SELECT * FROM servers WHERE game_container = 'minecraft';");
+      const rows = result[0];
+      return rows.length;
+    } catch (err) {
+      throw err;
+    }
   }
 
   async createServer(server: ServerSettingsS): Promise<number> {

@@ -19,7 +19,6 @@ export const CoreServerSettingsSchema = z.object({
     created_at: z.coerce.date()
 });
 
-
 // I probably should not nest it like this, instead it should be like a general dep in
 export const MinecraftSettingsSchema = z.object({
     game: GameEnum,
@@ -36,10 +35,23 @@ export const MinecraftSettingsSchema = z.object({
 
     //TODO: ADD RCON PASSWORD
 });
+
 // all possible settings depending on the game
 export const GameSettingsSchema = z.discriminatedUnion("game",[
     MinecraftSettingsSchema
 ]);
+
+// Since we don't want the user to play with certain values, we ommit them
+export const CreateServerRequestSchema = z.object({
+  core_settings: CoreServerSettingsSchema.omit({ 
+    server_id: true, 
+    container_id: true,
+    status: true,
+    created_at: true,
+  }),
+  game_settings: GameSettingsSchema
+});
+
 // the settings that will be parsed
 export const ServerSettingsSchema = z.object({
     core_settings: CoreServerSettingsSchema,
@@ -50,4 +62,5 @@ export type GameE = z.infer<typeof GameEnum>;
 export type RamAllocMbE = z.infer<typeof RamAllocMbEnum>;
 export type StatusE = z.infer<typeof StatusEnum>;
 export type CoreServerSettingsS = z.infer<typeof CoreServerSettingsSchema>;
+export type CreateServerRequestS = z.infer<typeof CreateServerRequestSchema>;
 export type ServerSettingsS = z.infer<typeof ServerSettingsSchema>;
