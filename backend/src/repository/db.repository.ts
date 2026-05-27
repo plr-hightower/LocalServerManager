@@ -14,39 +14,46 @@ export class DbService {
     return rowToServerSettings(rows[0]);
   }
 
-  async getServersByGame(game_container:GameE): Promise<number> {
+  async getServersByGame(game_container:GameE): Promise<ServerSettingsS[]> {
     try{
-      const result:[RowDataPacket[],FieldPacket[]] = await pool.execute("SELECT * FROM servers WHERE game_container = 'minecraft';");
+      const result:[RowDataPacket[],FieldPacket[]] = await pool.execute("SELECT * FROM servers WHERE game_container = ?;", [game_container]);
       const rows = result[0];
-      return rows.length;
+      let servers:ServerSettingsS[] = [];
+
+      for( const server of rows){
+        servers.push(rowToServerSettings(server));
+      }
+
+      return servers;
+
     } catch (err) {
       throw err;
     }
   }
 
-  async createServer(server: ServerSettingsS): Promise<number> {
+  async logNewServer(server: ServerSettingsS): Promise<number> {
     try {
       const { core_settings, game_settings } = server;
       const gameSettingsJson = JSON.stringify(game_settings ?? {});
 
       const [result] = await pool.execute<ResultSetHeader>(
         `INSERT INTO servers(
-          name, game_container, container_id, ram_alloc_mb, 
-          max_num_players, status, host_port, default_host_port, 
-          created_by, created_at, game_settings
+            name, game_container, container_id, ram_alloc_mb, 
+            max_num_players, status, host_port, default_host_port, 
+            created_by, created_at, game_settings
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          core_settings.name,
-          core_settings.game_container, // Matches your schema's typo
-          core_settings.container_id,
-          core_settings.ram_alloc_mb,
-          core_settings.max_num_players ?? 5,
-          core_settings.status ?? 'starting',
-          core_settings.host_port,
-          core_settings.default_host_port ?? null,
-          core_settings.created_by,
-          core_settings.created_at,
-          gameSettingsJson
+            core_settings.name,
+            core_settings.game_container, // Matches your schema's typo
+            core_settings.container_id,
+            core_settings.ram_alloc_mb,
+            core_settings.max_num_players ?? 5,
+            core_settings.status ?? 'starting',
+            core_settings.host_port,
+            core_settings.default_host_port ?? null,
+            core_settings.created_by,
+            core_settings.created_at,
+            gameSettingsJson
         ]
       );
 

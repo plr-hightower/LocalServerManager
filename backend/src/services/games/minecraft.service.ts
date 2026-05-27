@@ -20,16 +20,23 @@ export const GameService: IGameService = {
                 `MAX_PLAYERS=${settings.game_settings.MAX_PLAYERS}`,
                 `VIEW_DISTANCE=${settings.game_settings.VIEW_DISTANCE}`
             ],
-            protocols:[
+            protocols: [
                 'tcp'
             ]
-
         };
 
         // Validate the output before returning it
         return GameManifestSchema.parse(rawManifest);
     },
-    getDefaultPort: function (): string{
+
+    getDefaultPort: function (): string {
         return '25565';
+    },
+
+    getHostPort: function (numberOfGameServers: number): number {
+        if( 25565 + numberOfGameServers > 65535){
+            throw Error("New host port exceeds the max port count");
+        }
+        return (25565 + numberOfGameServers);
     }
 };

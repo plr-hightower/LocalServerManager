@@ -22,7 +22,7 @@ app.use(express.static('public'));
 app.use(express.json()); // since we will not be parsing html (cuz vite) we only want to parse post requests that are json
 app.use(morgan('dev')); // third party middleware
 
-app.use("/api/server",serverRouter);
+app.use("/api/server", serverRouter);
 
 
 

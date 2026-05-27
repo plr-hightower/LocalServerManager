@@ -1,6 +1,7 @@
-import { GameManifestS } from "@hightower/shared";
+import { GameManifestS, ServerSettingsS } from "@hightower/shared";
 
 export interface IGameService{
-    getManifest(gameSettings: any): Promise<GameManifestS>;
+    getManifest(gameSettings: ServerSettingsS): Promise<GameManifestS>;
     getDefaultPort() : string;
+    getHostPort(numberOfGameServers: number): number;
 }

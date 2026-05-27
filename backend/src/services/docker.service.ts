@@ -16,7 +16,7 @@ async function imageExists(image:string): Promise<boolean>{
     }
 }
 async function createContainer(settings: ServerSettingsS, manifest: GameManifestS): Promise<string> {
-    if(!settings.core_settings.default_host_port){
+    if(!settings.core_settings.default_host_port || !settings.core_settings.host_port){
         throw new Error("core_settings default hostport not set");
     }
     const ExposedPorts: Record<string, {}> = {};

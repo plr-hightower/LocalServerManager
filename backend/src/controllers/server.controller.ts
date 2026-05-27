@@ -23,6 +23,8 @@ const buildServer = async (req:Request, res:Response) => {
             container_id: "NOT GENERATED",
             status: "starting",
             created_at: new Date(),
+            host_port: null,
+            default_host_port: "NOT IMPLEMENTED",
         }
         });
         // ServerID is set automatically by db
@@ -47,15 +49,16 @@ const buildServer = async (req:Request, res:Response) => {
         console.log("hoooo close gang");
 
         settings.core_settings.default_host_port = gameService.getDefaultPort();
+        settings.core_settings.host_port = gameService.getHostPort((await db.getServersByGame(game)).length);
+
         //Here we get the game specific env variables
         const result: GameManifestS = await gameService.getManifest(settings);
         // What I should do is have a func that returns the default port for that specific game to later be mapped in the docker container instantiation
 
 
-        settings.core_settings.container_id = "gonicideetpesticide";
-        await createContainer(settings,result);
+        settings.core_settings.container_id = await createContainer(settings,result);
 
-        const insertId:number = await db.createServer(settings);
+        const insertId:number = await db.logNewServer(settings);
         console.log(insertId);
         res.status(200).json(insertId);
 
@@ -73,10 +76,16 @@ const buildServer = async (req:Request, res:Response) => {
         });
     }
 } 
+const deleteServer = async (req:Request, res:Response) => {
+    try{
+        
+    } catch (err:any){
+
+    }
+}
 
 const getServerList = async (req:Request, res:Response) => {
     try {
-
         const db:DbService = new DbService();
         res.status(200).json(await db.getServerList());
 

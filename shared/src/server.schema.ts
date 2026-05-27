@@ -13,8 +13,8 @@ export const CoreServerSettingsSchema = z.object({
     max_num_players : z.int().min(1).max(10).default(5),
     status: StatusEnum.default("starting"),
     //need to add some sort of default port mapping 
-    host_port: z.number().int().min(6000).max(65535),
-    default_host_port:z.string().optional(),
+    host_port: z.number().int().min(6000).max(65535).nullable(),
+    default_host_port:z.string().nullable(),
     created_by: z.string(),
     created_at: z.coerce.date()
 });
@@ -47,6 +47,8 @@ export const CreateServerRequestSchema = z.object({
     server_id: true, 
     container_id: true,
     status: true,
+    host_port: true,
+    default_host_port: true,
     created_at: true,
   }),
   game_settings: GameSettingsSchema
