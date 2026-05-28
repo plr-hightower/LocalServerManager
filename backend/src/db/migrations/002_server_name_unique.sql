@@ -1,1 +1,0 @@
-ALTER TABLE servers ADD CONSTRAINT uq_server_name UNIQUE (name);

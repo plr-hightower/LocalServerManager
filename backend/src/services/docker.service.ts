@@ -49,10 +49,22 @@ async function createContainer(settings: ServerSettingsS, manifest: GameManifest
     return container.id;
 }
 
+async function deleteContainer(containerId:string): Promise<boolean>{
+    //Need runtime validation so no fuck ups, same with stop container
+    const container:Container = docker.getContainer(containerId);
+    const info = await container.inspect();
+
+    if(!info.State.Paused){
+        await container.stop();
+    }
+    await container.remove();
+    return false;
+}
+
 async function stopContainer(containerId:string): Promise<void>{
     const container:Container = docker.getContainer(containerId);
     await container.stop();
     console.log(`Container ${container.id} stopped`);
 }
 
-export {createContainer,stopContainer};
+export {createContainer,stopContainer,deleteContainer};

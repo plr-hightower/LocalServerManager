@@ -15,7 +15,9 @@ CREATE TABLE servers (
     
     game_settings JSON NOT NULL,
     
-    CONSTRAINT chk_port CHECK (host_port BETWEEN 6000 AND 65535)
+    CONSTRAINT chk_port CHECK (host_port BETWEEN 6000 AND 65535),
+    INDEX idx_game_container (game_container),
+    INDEX idx_status (status)
 );
 
 COMMIT;

@@ -116,6 +116,10 @@ export class DbService {
     return results;
   }
 
+    async deleteServerRow(server_id: number): Promise<boolean> {
+        await pool.execute("DELETE FROM servers WHERE server_id = ?",[server_id]);
+        return true;
+    }
 }  
 function rowToServerSettings(row: RowDataPacket): ServerSettingsS {
   return ServerSettingsSchema.parse({

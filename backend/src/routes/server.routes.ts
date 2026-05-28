@@ -1,13 +1,16 @@
 import { Router } from "express";
 import { NextFunction, Request,Response } from "express";
 import { serverController } from "../controllers/server.controller";
-import { CreateServerRequestSchema, ServerSettingsSchema } from "@hightower/shared";
+import { CreateServerRequestSchema, DeleteServerRequestSchema, ServerSettingsSchema } from "@hightower/shared";
 import { validate } from "../services/validate.service";
 
 const router:Router = Router();
 
 // here validator will run before buildserver, interesting shi
 router.post("/buildServer" , validate(CreateServerRequestSchema), serverController.buildServer);
+
+router.post("/deleteServer", validate(DeleteServerRequestSchema), serverController.deleteServer);
+
 
 router.get("/:id/status",
     //TODO

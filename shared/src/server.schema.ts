@@ -54,15 +54,18 @@ export const CreateServerRequestSchema = z.object({
   game_settings: GameSettingsSchema
 });
 
+export const DeleteServerRequestSchema = CoreServerSettingsSchema.pick({name: true, created_by: true});
+
 // the settings that will be parsed
 export const ServerSettingsSchema = z.object({
     core_settings: CoreServerSettingsSchema,
     game_settings: GameSettingsSchema
-})
+});
 // IMPORTANT: do not name the type and value with the same name, compiler will be confused
 export type GameE = z.infer<typeof GameEnum>;
 export type RamAllocMbE = z.infer<typeof RamAllocMbEnum>;
 export type StatusE = z.infer<typeof StatusEnum>;
 export type CoreServerSettingsS = z.infer<typeof CoreServerSettingsSchema>;
 export type CreateServerRequestS = z.infer<typeof CreateServerRequestSchema>;
+export type DeleteServerRequestS = z.infer<typeof DeleteServerRequestSchema>;
 export type ServerSettingsS = z.infer<typeof ServerSettingsSchema>;

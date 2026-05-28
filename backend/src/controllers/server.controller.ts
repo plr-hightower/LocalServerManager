@@ -1,10 +1,10 @@
 import type { NextFunction, Request,Response } from "express";
 
 import { IGameService } from "../interfaces/IGameService";
-import { CreateServerRequestS, CreateServerRequestSchema, GameE, GameManifestS, ServerSettingsS, ServerSettingsSchema, StatusEnum } from '@hightower/shared';
+import { CreateServerRequestS, CreateServerRequestSchema, DeleteServerRequestS, DeleteServerRequestSchema, GameE, GameManifestS, ServerSettingsS, ServerSettingsSchema, StatusEnum } from '@hightower/shared';
 import { DbService } from "../repository/db.repository";
-import { ZodError } from "zod";
-import { createContainer } from "../services/docker.service";
+import { success, ZodError } from "zod";
+import { createContainer, deleteContainer } from "../services/docker.service";
 
 
 
@@ -76,11 +76,34 @@ const buildServer = async (req:Request, res:Response) => {
         });
     }
 } 
+
 const deleteServer = async (req:Request, res:Response) => {
     try{
-        
-    } catch (err:any){
+        const request: DeleteServerRequestS = DeleteServerRequestSchema.parse(req.body);
+        const db:DbService = new DbService();
 
+
+        const serverSettings:ServerSettingsS | null = await db.getServerByName(request.name);
+        if( serverSettings === null || !serverSettings.core_settings.server_id){
+            return res.status(404);
+        }
+        await deleteContainer(serverSettings.core_settings.container_id);
+
+        await db.deleteServerRow(serverSettings.core_settings.server_id);
+        res.status(200).json({success: true});
+        return;
+
+    } catch (err:any) {
+        console.log(`Error deleting server: ${err}`);
+
+        if( err instanceof ZodError){
+            return res.status(400).json({error: "Invalid request body.", details: err.issues })
+        }
+
+        res.status(500).json({ 
+            error: "Failed to delete Minecraft server", 
+            details: err
+        });
     }
 }
 
@@ -105,5 +128,6 @@ const getServerList = async (req:Request, res:Response) => {
 }
 export const serverController = {
     buildServer,
+    deleteServer,
     getServerList
 }
