@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { NextFunction, Request,Response } from "express";
 import { serverController } from "../controllers/server.controller";
-import { CreateServerRequestSchema, DeleteServerRequestSchema, ServerSettingsSchema } from "@hightower/shared";
+import { CreateServerRequestSchema, DeleteServerRequestSchema, ServerActionSchema, ServerSettingsSchema } from "@hightower/shared";
 import { validate } from "../services/validate.service";
 
 const router:Router = Router();
@@ -11,33 +11,11 @@ router.post("/buildServer" , validate(CreateServerRequestSchema), serverControll
 
 router.post("/deleteServer", validate(DeleteServerRequestSchema), serverController.deleteServer);
 
+router.post("/status", validate(ServerActionSchema), serverController.changeServerStatus);
 
-router.get("/:id/status",
-    //TODO
-    async (req:Request,res:Response) => {
-        res.status(200).json({
-            goon: req.params.id
-        })
-    }
-)
+router.get("/healthCheck", serverController.getHealthCheck);
 
 router.get("/listServers", serverController.getServerList);
 
-router.get("/:id/start",
-    //TODO
-    async(req:Request, res:Response) =>{
-        res.status(200).json({
-            update: "start"
-        })
-    }
-)
-router.get("/:id/stop",
-    //TODO
-    async(req:Request, res:Response) =>{
-        res.status(200).json({
-            update: "stop"
-        })
-    }
-)
 export default router;
 

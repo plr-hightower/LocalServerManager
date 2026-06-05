@@ -1,10 +1,10 @@
 import type { NextFunction, Request,Response } from "express";
 
 import { IGameService } from "../interfaces/IGameService";
-import { CreateServerRequestS, CreateServerRequestSchema, DeleteServerRequestS, DeleteServerRequestSchema, GameE, GameManifestS, ServerSettingsS, ServerSettingsSchema, StatusEnum } from '@hightower/shared';
+import { CreateServerRequestS, CreateServerRequestSchema, DeleteServerRequestS, DeleteServerRequestSchema, GameE, GameManifestS, HealthCheckResponseS, HealthCheckResponseSchema, ServerActionSchema, ServerSettingsS, ServerSettingsSchema, StatusE, StatusEnum } from '@hightower/shared';
 import { DbService } from "../repository/db.repository";
 import { success, ZodError } from "zod";
-import { createContainer, deleteContainer } from "../services/docker.service";
+import { createContainer, deleteContainer, getDockerStats, startContainer, stopContainer } from "../services/docker.service";
 
 
 
@@ -77,6 +77,70 @@ const buildServer = async (req:Request, res:Response) => {
     }
 } 
 
+const changeServerStatus = async (req: Request, res: Response) => {
+    try {
+        const { name, action }: { name: string, action: StatusE} = ServerActionSchema.parse(req.body);
+
+        const db: DbService = new DbService();
+        const serverSettings: ServerSettingsS | null = await db.getServerByName(name);
+
+        if (serverSettings === null) {
+            return res.status(404).json({ error: "Server not found" });
+        }
+
+        const containerId = serverSettings.core_settings.container_id;
+
+        if (action === "starting") {
+            await startContainer(containerId);
+            await db.updateServerStatus(serverSettings.core_settings.server_id!, "started");
+        } else {
+            await stopContainer(containerId);
+            await db.updateServerStatus(serverSettings.core_settings.server_id!, "stopped");
+        }
+
+        return res.status(200).json({ success: true });
+
+    } catch (err: unknown) {
+        if (err instanceof ZodError) {
+            return res.status(400).json({ error: "Invalid request.", details: err.issues });
+        }
+        if (err instanceof Error) {
+            return res.status(500).json({ error: "Failed to change server status", details: err.message });
+        }
+        res.status(500).json({ error: "Unknown error" });
+    }
+}
+const getHealthCheck = async (req: Request, res: Response) => {
+    try {
+        const db: DbService = new DbService();
+
+        const [allServers, runningServers, containerStats] = await Promise.all([
+            db.getAllServers(),
+            db.getServersByStatus("started"),
+            getDockerStats(await db.getAllServers()),
+        ]);
+
+        const response: HealthCheckResponseS = HealthCheckResponseSchema.parse({
+            servers: {
+                total: allServers.length,
+                running: runningServers.length,
+                available: allServers.length - runningServers.length,
+            },
+            containers: containerStats,
+        });
+
+        return res.status(200).json(response);
+
+    } catch (err: unknown) {
+        if (err instanceof Error) {
+            return res.status(500).json({
+                error: "Failed to get health check",
+                details: err.message,
+            });
+        }
+        res.status(500).json({ error: "Unknown error" });
+    }
+}
 const deleteServer = async (req:Request, res:Response) => {
     try{
         const request: DeleteServerRequestS = DeleteServerRequestSchema.parse(req.body);
@@ -127,7 +191,9 @@ const getServerList = async (req:Request, res:Response) => {
     }
 }
 export const serverController = {
+    changeServerStatus,
     buildServer,
     deleteServer,
-    getServerList
+    getServerList,
+    getHealthCheck
 }

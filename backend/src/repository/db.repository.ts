@@ -116,10 +116,38 @@ export class DbService {
     return results;
   }
 
-    async deleteServerRow(server_id: number): Promise<boolean> {
-        await pool.execute("DELETE FROM servers WHERE server_id = ?",[server_id]);
-        return true;
-    }
+  async deleteServerRow(server_id: number): Promise<boolean> {
+      await pool.execute("DELETE FROM servers WHERE server_id = ?",[server_id]);
+      return true;
+  }
+
+  async updateServerStatus(server_id: number, status: StatusE): Promise<void> {
+    await pool.execute(
+        "UPDATE servers SET status = ? WHERE server_id = ?",
+        [status, server_id]
+    );
+  }
+
+  async updateServerStatusByContainerId(containerId: string, status: StatusE): Promise<void> {
+    await pool.execute(
+        "UPDATE servers SET status = ? WHERE container_id = ?",
+        [status, containerId]
+    );
+  }
+
+  async getAllServers(): Promise<ServerSettingsS[]> {
+      const [rows] = await pool.execute<RowDataPacket[]>("SELECT * FROM servers");
+      if (!rows || rows.length === 0) return [];
+      return rows.map(rowToServerSettings);
+  }
+
+  async getServersByStatus(status: StatusE): Promise<ServerSettingsS[]> {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+          "SELECT * FROM servers WHERE status = ?",
+          [status]
+      );
+      return rows.map(rowToServerSettings);
+  }
 }  
 function rowToServerSettings(row: RowDataPacket): ServerSettingsS {
   return ServerSettingsSchema.parse({

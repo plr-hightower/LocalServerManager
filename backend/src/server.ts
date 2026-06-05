@@ -9,9 +9,12 @@ import serverRouter from "./routes/server.routes";
 import Docker, { Container } from 'dockerode';
 import express from 'express';
 import morgan from 'morgan';
+import { DbService } from "./repository/db.repository";
+import { watchContainerEvents } from "./services/docker.service";
 
 const app = express();
-
+const db = new DbService();
+await watchContainerEvents(db);
 // listen for requests 
 app.listen(3000);
 
@@ -23,8 +26,6 @@ app.use(express.json()); // since we will not be parsing html (cuz vite) we only
 app.use(morgan('dev')); // third party middleware
 
 app.use("/api/server", serverRouter);
-
-
 
 
 // app.use((req:Request, res:Request, next:NextFunction) =>{
