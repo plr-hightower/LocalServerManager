@@ -1,4 +1,4 @@
-#!/bash/bin
+#!/bin/bash
 set -e
 
 # Load global configuration and environment secrets
