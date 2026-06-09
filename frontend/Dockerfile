@@ -6,12 +6,12 @@ COPY shared/package*.json ./shared/
 COPY backend/package*.json ./backend/
 COPY frontend/package*.json ./frontend/
 
-RUN npm install && npm install -g typescript vue-tsc vite
+RUN npm install
 
 COPY shared/ ./shared/
 COPY frontend/ ./frontend/
 
-RUN npm run build:frontend
+RUN PATH=/app/node_modules/.bin:$PATH npm run build:frontend
 
 FROM nginx:alpine
 COPY --from=build /app/frontend/dist /usr/share/nginx/html
