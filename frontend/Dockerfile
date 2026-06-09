@@ -1,4 +1,3 @@
-# ── STAGE 1: BUILD ENVIRONMENT ─────────────────────────────────────────
 FROM node:20-slim AS build
 WORKDIR /app
 
@@ -9,14 +8,11 @@ COPY frontend/package*.json ./frontend/
 
 RUN npm install
 
-ENV PATH=/app/node_modules/.bin:$PATH
-
 COPY shared/ ./shared/
 COPY frontend/ ./frontend/
 
-RUN npm run build:frontend
+RUN /app/node_modules/.bin/vue-tsc --noEmit --project frontend/tsconfig.json && /app/node_modules/.bin/vite build --config frontend/vite.config.ts
 
-# ── STAGE 2: RUNTIME ENVIRONMENT ───────────────────────────────────────
 FROM nginx:alpine
 COPY --from=build /app/frontend/dist /usr/share/nginx/html
 

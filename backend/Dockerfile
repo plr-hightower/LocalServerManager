@@ -1,4 +1,3 @@
-# ── STAGE 1: BUILD ENVIRONMENT ─────────────────────────────────────────
 FROM node:20-slim AS builder
 WORKDIR /app
 
@@ -9,14 +8,11 @@ COPY frontend/package*.json ./frontend/
 
 RUN npm install
 
-ENV PATH=/app/node_modules/.bin:$PATH
-
 COPY shared/ ./shared/
 COPY backend/ ./backend/
 
-RUN npm run build:backend
+RUN /app/node_modules/.bin/tsc --project backend/tsconfig.json
 
-# ── STAGE 2: RUNTIME ENVIRONMENT ───────────────────────────────────────
 FROM node:20-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
