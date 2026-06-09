@@ -6,13 +6,12 @@ COPY package*.json ./
 COPY shared/package*.json ./shared/
 COPY backend/package*.json ./backend/
 
-RUN npm install --workspaces --include-workspace-root
+RUN npm install
 
 COPY shared/ ./shared/
 COPY backend/ ./backend/
 
-WORKDIR /app/backend
-RUN npm run build
+RUN npm run build:backend
 
 # ── STAGE 2: RUNTIME ENVIRONMENT ───────────────────────────────────────
 FROM node:20-slim AS runner
