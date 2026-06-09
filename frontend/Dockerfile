@@ -6,7 +6,7 @@ COPY shared/package*.json ./shared/
 COPY backend/package*.json ./backend/
 COPY frontend/package*.json ./frontend/
 
-RUN npm install
+RUN npm install && npm install -g typescript vue-tsc vite
 
 COPY shared/ ./shared/
 COPY frontend/ ./frontend/
