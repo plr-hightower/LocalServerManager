@@ -2,19 +2,15 @@
 FROM node:20-slim AS builder
 WORKDIR /app
 
-# Copy workspace layouts
 COPY package*.json ./
 COPY shared/package*.json ./shared/
 COPY backend/package*.json ./backend/
 
-# Install ALL dependencies (including devDependencies like TypeScript)
 RUN npm install
 
-# Copy source code assets
 COPY shared/ ./shared/
 COPY backend/ ./backend/
 
-# Build your production dist targets
 WORKDIR /app/backend
 RUN npm run build
 
@@ -23,14 +19,14 @@ FROM node:20-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Copy built artifacts and package structures from stage 1
 COPY package*.json ./
 COPY shared/package*.json ./shared/
 COPY backend/package*.json ./backend/
 COPY --from=builder /app/backend/dist ./backend/dist
+COPY --from=builder /app/backend/scripts ./backend/scripts
+COPY --from=builder /app/backend/src/db/migrations ./backend/src/db/migrations
 
-# Install ONLY production dependencies to keep the image tiny
-RUN npm prune --production
+RUN npm install --omit=dev
 
 EXPOSE 3000
 WORKDIR /app/backend
