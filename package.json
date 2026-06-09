@@ -20,6 +20,9 @@
     "express": "^5.2.1"
   },
   "devDependencies": {
-    "@types/dockerode": "^4.0.1"
+    "@types/dockerode": "^4.0.1",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^2.0.0",
+    "vite": "^6.0.0"
   }
 }
