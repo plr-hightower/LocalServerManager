@@ -22,7 +22,6 @@ COPY package*.json ./
 COPY shared/package*.json ./shared/
 COPY backend/package*.json ./backend/
 COPY --from=builder /app/backend/dist ./backend/dist
-COPY --from=builder /app/backend/scripts ./backend/scripts
 COPY --from=builder /app/backend/src/db/migrations ./backend/src/db/migrations
 
 RUN npm install --omit=dev
