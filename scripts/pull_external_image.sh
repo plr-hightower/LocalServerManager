@@ -1,5 +1,4 @@
 #!/bin/bash
-# usage: ./scripts/save-image.sh minecraft itzg/minecraft-server:2024.1.0
 NAME=$1
 IMAGE=$2
 OUTPUT_DIR=${3:-./images}

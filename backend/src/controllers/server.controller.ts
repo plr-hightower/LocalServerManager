@@ -41,7 +41,7 @@ const buildServer = async (req:Request, res:Response) => {
         const game:GameE = settings.core_settings.game_container;
 
         // Here we import the game specific module from which we eventually get the game manifest
-        const module = await import(`../services/games/${game}.service`);
+        const module = await import(`../services/games/${game}.service.js`);
 
         //Making sure that it respects the interface
         const gameService = module.GameService as IGameService;
