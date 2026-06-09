@@ -11,6 +11,7 @@ RUN npm install
 COPY shared/ ./shared/
 COPY backend/ ./backend/
 
+RUN /app/node_modules/.bin/tsc --project shared/tsconfig.json
 RUN /app/node_modules/.bin/tsc --project backend/tsconfig.json
 
 FROM node:20-slim AS runner
