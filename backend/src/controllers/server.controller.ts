@@ -1,10 +1,10 @@
 import type { NextFunction, Request,Response } from "express";
 
-import { IGameService } from "../interfaces/IGameService";
+import { IGameService } from "../interfaces/IGameService.js";
 import { CreateServerRequestS, CreateServerRequestSchema, DeleteServerRequestS, DeleteServerRequestSchema, GameE, GameManifestS, HealthCheckResponseS, HealthCheckResponseSchema, ServerActionSchema, ServerSettingsS, ServerSettingsSchema, StatusE, StatusEnum } from '@hightower/shared';
-import { DbService } from "../repository/db.repository";
+import { DbService } from "../repository/db.repository.js";
 import { success, ZodError } from "zod";
-import { createContainer, deleteContainer, getDockerStats, startContainer, stopContainer } from "../services/docker.service";
+import { createContainer, deleteContainer, getDockerStats, startContainer, stopContainer } from "../services/docker.service.js";
 
 
 

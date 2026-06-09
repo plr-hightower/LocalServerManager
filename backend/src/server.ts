@@ -4,13 +4,13 @@ import path from 'path';
 import { error } from "console";
 //Good to know that serverRouter is a fuckass name that I decided on 
 //since the default export of server.routes is router and is alone type shit
-import serverRouter from "./routes/server.routes";
+import serverRouter from "./routes/server.routes.js";
 
 import Docker, { Container } from 'dockerode';
 import express from 'express';
 import morgan from 'morgan';
-import { DbService } from "./repository/db.repository";
-import { watchContainerEvents } from "./services/docker.service";
+import { DbService } from "./repository/db.repository.js";
+import { watchContainerEvents } from "./services/docker.service.js";
 
 const app = express();
 const db = new DbService();

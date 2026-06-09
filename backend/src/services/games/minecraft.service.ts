@@ -1,4 +1,4 @@
-import { IGameService } from "../../interfaces/IGameService";
+import { IGameService } from "../../interfaces/IGameService.js";
 import { GameManifestS, GameManifestSchema } from "@hightower/shared";
 import { ServerSettingsS } from "@hightower/shared";
 

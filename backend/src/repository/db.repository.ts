@@ -1,5 +1,5 @@
 import { CoreServerSettingsS, CoreServerSettingsSchema, GameE, ServerSettingsS, ServerSettingsSchema, StatusE } from '@hightower/shared';
-import { pool } from '../db/pool';
+import { pool } from '../db/pool.js';
 import type { RowDataPacket, ResultSetHeader, FieldPacket } from 'mysql2';
 import { Server } from 'http';
 
@@ -136,9 +136,8 @@ export class DbService {
   }
 
   async getAllServers(): Promise<ServerSettingsS[]> {
-      const [rows] = await pool.execute<RowDataPacket[]>("SELECT * FROM servers");
-      if (!rows || rows.length === 0) return [];
-      return rows.map(rowToServerSettings);
+    const [rows] = await pool.execute<RowDataPacket[]>("SELECT * FROM servers");
+    return rows.map(rowToServerSettings);
   }
 
   async getServersByStatus(status: StatusE): Promise<ServerSettingsS[]> {

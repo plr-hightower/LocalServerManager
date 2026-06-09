@@ -1,6 +1,6 @@
 import { ContainerStatS, ContainerStatSchema, GameManifestS, ServerSettingsS, StatusE } from '@hightower/shared';
 import Docker, { Container } from 'dockerode';
-import { DbService } from '../repository/db.repository';
+import { DbService } from '../repository/db.repository.js';
 
 // Docker controller??
 const docker = new Docker();

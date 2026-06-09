@@ -10,6 +10,7 @@ RUN npm install
 
 COPY shared/ ./shared/
 COPY backend/ ./backend/
+COPY scripts/ ./scripts/
 
 RUN /app/node_modules/.bin/tsc --project shared/tsconfig.json
 RUN /app/node_modules/.bin/tsc --project backend/tsconfig.json
@@ -22,6 +23,7 @@ COPY package*.json ./
 COPY shared/package*.json ./shared/
 COPY backend/package*.json ./backend/
 COPY --from=builder /app/backend/dist ./backend/dist
+COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/backend/src/db/migrations ./backend/src/db/migrations
 
 RUN npm install --omit=dev
