@@ -4,14 +4,17 @@ import path from 'path';
 import { error } from "console";
 //Good to know that serverRouter is a fuckass name that I decided on 
 //since the default export of server.routes is router and is alone type shit
-import serverRouter from "./routes/server.routes";
+import serverRouter from "./routes/server.routes.js";
 
 import Docker, { Container } from 'dockerode';
 import express from 'express';
 import morgan from 'morgan';
+import { DbService } from "./repository/db.repository.js";
+import { watchContainerEvents } from "./services/docker.service.js";
 
 const app = express();
-
+const db = new DbService();
+await watchContainerEvents(db);
 // listen for requests 
 app.listen(3000);
 
@@ -23,8 +26,6 @@ app.use(express.json()); // since we will not be parsing html (cuz vite) we only
 app.use(morgan('dev')); // third party middleware
 
 app.use("/api/server", serverRouter);
-
-
 
 
 // app.use((req:Request, res:Request, next:NextFunction) =>{

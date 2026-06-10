@@ -55,6 +55,10 @@ export const CreateServerRequestSchema = z.object({
 });
 
 export const DeleteServerRequestSchema = CoreServerSettingsSchema.pick({name: true, created_by: true});
+export const ServerActionSchema = z.object({
+    name: z.string(),
+    action: StatusEnum,
+});
 
 // the settings that will be parsed
 export const ServerSettingsSchema = z.object({
@@ -69,3 +73,4 @@ export type CoreServerSettingsS = z.infer<typeof CoreServerSettingsSchema>;
 export type CreateServerRequestS = z.infer<typeof CreateServerRequestSchema>;
 export type DeleteServerRequestS = z.infer<typeof DeleteServerRequestSchema>;
 export type ServerSettingsS = z.infer<typeof ServerSettingsSchema>;
+export type ServerActionS = z.infer<typeof ServerActionSchema>;

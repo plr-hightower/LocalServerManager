@@ -2,7 +2,7 @@
 name: Changelog Check
 
 on:
-  pullrequest:
+  pull_request:
 
 jobs:
   check-changelog:
@@ -12,8 +12,8 @@ jobs:
 
       - name: Check CHANGELOG.md was modified
         run: |
-          git fetch origin main
-          if ! git diff --name-only origin/main...HEAD | grep -q "CHANGELOG.md"; then
+          git fetch origin dev
+          if ! git diff --name-only origin/dev HEAD | grep -q "CHANGELOG.md"; then
             echo "❌ CHANGELOG.md was not updated"
             exit 1
           fi

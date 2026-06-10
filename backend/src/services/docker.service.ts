@@ -1,5 +1,6 @@
-import { GameManifestS, ServerSettingsS } from '@hightower/shared';
+import { ContainerStatS, ContainerStatSchema, GameManifestS, ServerSettingsS, StatusE } from '@hightower/shared';
 import Docker, { Container } from 'dockerode';
+import { DbService } from '../repository/db.repository.js';
 
 // Docker controller??
 const docker = new Docker();
@@ -61,10 +62,92 @@ async function deleteContainer(containerId:string): Promise<boolean>{
     return false;
 }
 
-async function stopContainer(containerId:string): Promise<void>{
-    const container:Container = docker.getContainer(containerId);
-    await container.stop();
-    console.log(`Container ${container.id} stopped`);
+async function getDockerStats(servers: ServerSettingsS[]): Promise<ContainerStatS[]> {
+    const containerIds = new Set(servers.map(s => s.core_settings.container_id));
+
+    const containers = await docker.listContainers();
+    const managedContainers = containers.filter(c => containerIds.has(c.Id));
+
+    const stats = await Promise.all(
+        managedContainers.map(async (containerInfo) => {
+            const container = docker.getContainer(containerInfo.Id);
+            const stat = await container.stats({ stream: false });
+
+            const cpuDelta = stat.cpu_stats.cpu_usage.total_usage - stat.precpu_stats.cpu_usage.total_usage;
+            const systemDelta = stat.cpu_stats.system_cpu_usage - stat.precpu_stats.system_cpu_usage;
+            const cpuUsagePercent = (cpuDelta / systemDelta) * stat.cpu_stats.online_cpus * 100;
+
+            const memoryUsageMb = stat.memory_stats.usage / 1024 / 1024;
+            const memoryLimitMb = stat.memory_stats.limit / 1024 / 1024;
+            const memoryUsagePercent = (memoryUsageMb / memoryLimitMb) * 100;
+
+            return ContainerStatSchema.parse({
+                containerId: containerInfo.Id,
+                name: containerInfo.Names[0].slice(1),
+                cpuUsagePercent: Math.round(cpuUsagePercent * 100) / 100,
+                memoryUsageMb: Math.round(memoryUsageMb),
+                memoryLimitMb: Math.round(memoryLimitMb),
+                memoryUsagePercent: Math.round(memoryUsagePercent * 100) / 100,
+            });
+        })
+    );
+
+    return stats;
+}
+async function startContainer(containerId: string): Promise<void> {
+    const container: Container = docker.getContainer(containerId);
+    const info = await container.inspect();
+
+    if (info.State.Running) {
+        throw new Error("Container is already running");
+    }
+
+    await container.start();
 }
 
-export {createContainer,stopContainer,deleteContainer};
+async function stopContainer(containerId: string): Promise<void> {
+    const container: Container = docker.getContainer(containerId);
+    const info = await container.inspect();
+
+    if (!info.State.Running) {
+        throw new Error("Container is already stopped");
+    }
+
+    await container.stop();
+}
+async function watchContainerEvents(db: DbService): Promise<void> {
+    const eventStream = await docker.getEvents({
+        filters: {
+            type: ["container"],
+            event: ["start", "stop", "die", "kill", "pause"]
+        }
+    });
+
+    eventStream.on("data", async (chunk: Buffer) => {
+        const event = JSON.parse(chunk.toString());
+        const containerId: string = event.id;
+        const action: string = event.status;
+
+        const statusMap: Partial<Record<string, StatusE>> = {
+            start: "started",
+            stop:  "stopped",
+            die:   "stopped",
+            kill:  "stopped",
+        };
+
+        const newStatus = statusMap[action];
+        if (!newStatus) return;
+
+        try {
+            await db.updateServerStatusByContainerId(containerId, newStatus);
+        } catch (err) {
+            console.error(`Failed to update status for container ${containerId}:`, err);
+        }
+    });
+
+    eventStream.on("error", (err: Error) => {
+        console.error("Docker event stream error:", err);
+    });
+}
+
+export {createContainer, startContainer, stopContainer, deleteContainer, watchContainerEvents, getDockerStats};

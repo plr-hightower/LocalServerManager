@@ -1,16 +1,19 @@
-FROM node:20-slim
+FROM node:20-slim AS build
 WORKDIR /app
 
 COPY package*.json ./
+COPY shared/package*.json ./shared/
+COPY backend/package*.json ./backend/
+COPY frontend/package*.json ./frontend/
+
+RUN npm install
 
 COPY shared/ ./shared/
 COPY frontend/ ./frontend/
 
-RUN npm install
+RUN cd frontend && /app/node_modules/.bin/vue-tsc --noEmit --project tsconfig.json && /app/node_modules/.bin/vite build
 
-WORKDIR /app/frontend
-RUN npm run build
-RUN npm install -g serve
+FROM nginx:alpine
+COPY --from=build /app/frontend/dist /usr/share/nginx/html
 
-EXPOSE 5173
-CMD ["serve", "-s", "dist", "-l", "5173"]
+EXPOSE 80
