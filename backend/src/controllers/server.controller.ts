@@ -90,12 +90,14 @@ const changeServerStatus = async (req: Request, res: Response) => {
 
         const containerId = serverSettings.core_settings.container_id;
 
-        if (action === "starting") {
+        if (action === "starting" || action === "started") {
             await startContainer(containerId);
             await db.updateServerStatus(serverSettings.core_settings.server_id!, "started");
-        } else {
+        } else if (action === "stopped" || action === "stopping"){
             await stopContainer(containerId);
             await db.updateServerStatus(serverSettings.core_settings.server_id!, "stopped");
+        } else {
+            return res.status(400).json({ error: "Invalide action"});
         }
 
         return res.status(200).json({ success: true });
