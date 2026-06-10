@@ -13,6 +13,7 @@
 - Added github action pipeline to check changelog in PR's
 
 ### Fixed
+- Dockerfiles updated and docker compose aswell.
 
 ### Changed
 - Redid the docker-compose and how everything is run 
