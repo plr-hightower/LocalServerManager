@@ -9,7 +9,7 @@ import { ServerSettingsS } from "@hightower/shared";
 // we are exporting this as an object that respects the interface, by convention, the var should be called 
 // the interface name without the I (just invented this shit)
 export const GameService: IGameService = {
-    getManifest: async (settings: ServerSettingsS): Promise<GameManifestS> => {
+    getGameManifest: async (settings: ServerSettingsS): Promise<GameManifestS> => {
         const rawManifest = {
             image: 'itzg/minecraft-server:2024.1.0',
             env: [
@@ -22,6 +22,9 @@ export const GameService: IGameService = {
             ],
             protocols: [
                 'tcp'
+            ],
+            worldVolumes: [
+                { path: "/data"}
             ]
         };
 

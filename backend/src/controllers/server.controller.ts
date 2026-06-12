@@ -5,6 +5,7 @@ import { CreateServerRequestS, CreateServerRequestSchema, DeleteServerRequestS, 
 import { DbService } from "../repository/db.repository.js";
 import { success, ZodError } from "zod";
 import { createContainer, deleteContainer, getDockerStats, startContainer, stopContainer } from "../services/docker.service.js";
+import { getGameService, getManifest } from "../services/game.service.js";
 
 
 
@@ -37,26 +38,15 @@ const buildServer = async (req:Request, res:Response) => {
         }
 
 
-        // Here we extract what game it is
+        // Setting up the settings
         const game:GameE = settings.core_settings.game_container;
-
-        // Here we import the game specific module from which we eventually get the game manifest
-        const module = await import(`../services/games/${game}.service.js`);
-
-        //Making sure that it respects the interface
-        const gameService = module.GameService as IGameService;
-
-        console.log("hoooo close gang");
+        const gameService = await getGameService(settings);
+        const manifest: GameManifestS = await gameService.getGameManifest(settings);
 
         settings.core_settings.default_host_port = gameService.getDefaultPort();
         settings.core_settings.host_port = gameService.getHostPort((await db.getServersByGame(game)).length);
 
-        //Here we get the game specific env variables
-        const result: GameManifestS = await gameService.getManifest(settings);
-        // What I should do is have a func that returns the default port for that specific game to later be mapped in the docker container instantiation
-
-
-        settings.core_settings.container_id = await createContainer(settings,result);
+        settings.core_settings.container_id = await createContainer(settings,manifest);
 
         const insertId:number = await db.logNewServer(settings);
         console.log(insertId);

@@ -5,6 +5,7 @@ import { error } from "console";
 //Good to know that serverRouter is a fuckass name that I decided on 
 //since the default export of server.routes is router and is alone type shit
 import serverRouter from "./routes/server.routes.js";
+import worldRouter from "./routes/world.routes.js"
 
 import Docker, { Container } from 'dockerode';
 import express from 'express';
@@ -26,6 +27,7 @@ app.use(express.json()); // since we will not be parsing html (cuz vite) we only
 app.use(morgan('dev')); // third party middleware
 
 app.use("/api/server", serverRouter);
+app.use("/api/world", worldRouter);
 
 
 // app.use((req:Request, res:Request, next:NextFunction) =>{
