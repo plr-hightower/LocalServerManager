@@ -6,7 +6,7 @@ export const StatusEnum = z.enum(["started","starting","stopped","stopping","err
 
 export const CoreServerSettingsSchema = z.object({
     server_id: z.number().int().optional(),
-    name: z.string(),
+    name: z.string().regex(/^[a-zA-Z0-9_-]+$/, "Name can only contain letters, numbers, underscores and dashes"),
     game_container: GameEnum,
     container_id: z.string().max(64),
     ram_alloc_mb: RamAllocMbEnum,
@@ -55,6 +55,8 @@ export const CreateServerRequestSchema = z.object({
 });
 
 export const DeleteServerRequestSchema = CoreServerSettingsSchema.pick({name: true, created_by: true});
+
+
 export const ServerActionSchema = z.object({
     name: z.string(),
     action: StatusEnum,

@@ -1,4 +1,4 @@
-import { ContainerStatS, ContainerStatSchema, GameManifestS, ServerSettingsS, StatusE } from '@hightower/shared';
+import { ContainerStatS, ContainerStatSchema, GameManifestS, ServerSettingsS, StatusE, toBind } from '@hightower/shared';
 import Docker, { Container } from 'dockerode';
 import { DbService } from '../repository/db.repository.js';
 
@@ -40,6 +40,7 @@ async function createContainer(settings: ServerSettingsS, manifest: GameManifest
         ExposedPorts,
         HostConfig: {
             PortBindings,
+            Binds: manifest.worldVolumes.map( v => toBind( settings.core_settings.name, v)),
             RestartPolicy: { Name: 'unless-stopped' },
             Memory: settings.core_settings.ram_alloc_mb * 1024 * 1024 
         }
