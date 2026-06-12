@@ -5,7 +5,6 @@ import { worldController } from '../controllers/world.controller.js';
 
 const router = Router();
 
-router.get("/download", validate(WorldRequestSchema), worldController.downloadWorld);
-router.post("/upload");
+router.post("/download", validate(WorldRequestSchema), worldController.downloadWorld);
 
 export default router;

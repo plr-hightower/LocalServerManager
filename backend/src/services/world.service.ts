@@ -17,8 +17,8 @@ const docker = new Docker();
 /// </summary>
 /// <param name="server">The server whose world volumes to resolve.</param>
 /// <returns>An array of host filesystem paths, one per world volume.</returns>
-async function getWorldHostPaths(server: ServerSettingsS): Promise<string[]> {
-    const manifest: GameManifestS = await getManifest(server);
+async function getWorldHostPaths(server: ServerSettingsS, manif?: GameManifestS): Promise<string[]> {
+    const manifest: GameManifestS = manif ? manif : await getManifest(server);
     const paths: string[] = [];
 
     for (const volume of manifest.worldVolumes) {
@@ -38,12 +38,21 @@ async function getWorldHostPaths(server: ServerSettingsS): Promise<string[]> {
 /// <param name="res">The Express response to stream the archive to.</param>
 export async function streamWorldDownload(server: ServerSettingsS, res: Response): Promise<void> {
     const manifest: GameManifestS = await getManifest(server);
-    const hostPaths = await getWorldHostPaths(server);
+    const hostPaths = await getWorldHostPaths(server, manifest);
 
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${server.core_settings.name}_world.zip"`);
 
     const archive = archiver('zip', { zlib: { level: 9 } });
+
+    archive.on('error', (err: Error) => {
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Failed to create archive', details: err.message });
+        } else {
+            res.destroy();
+        }
+    });
+
     archive.pipe(res);
 
     for (let i = 0; i < manifest.worldVolumes.length; i++) {

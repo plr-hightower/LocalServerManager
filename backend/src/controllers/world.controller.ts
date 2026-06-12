@@ -15,7 +15,9 @@ const downloadWorld = async (req: Request, res: Response) => {
     try {
         const { name , created_by}: WorldRequestS = WorldRequestSchema.parse(req.body);
 
+        console.log('[downloadWorld] looking up server:', JSON.stringify(name));
         const server = await db.getServerByName(name);
+        console.log('[downloadWorld] found:', server?.core_settings.name ?? 'null');
         if (!server) {
             return res.status(404).json(({ error: "Server not found" }));
         }
