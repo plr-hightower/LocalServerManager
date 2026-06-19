@@ -12,6 +12,7 @@
 - Added a sweet of scripts to help with managing the set up and images
 - Added github action pipeline to check changelog in PR's
 - Added World file downloads
+- Added backend testing framework
 
 ### Fixed
 - Dockerfiles updated and docker compose aswell.
