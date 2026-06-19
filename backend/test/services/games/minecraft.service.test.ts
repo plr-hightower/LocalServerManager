@@ -67,51 +67,56 @@ describe('GameService (minecraft)', () => {
     })
   })
 
-  describe('getManifest', () => {
+  describe('getGameManifest', () => {
     it('returns the correct Docker image', async () => {
-      const manifest = await GameService.getManifest(baseServer)
+      const manifest = await GameService.getGameManifest(baseServer)
       expect(manifest.image).toBe('itzg/minecraft-server:2024.1.0')
     })
 
     it('includes tcp in protocols', async () => {
-      const manifest = await GameService.getManifest(baseServer)
+      const manifest = await GameService.getGameManifest(baseServer)
       expect(manifest.protocols).toContain('tcp')
     })
 
+    it('includes worldVolumes with /data path', async () => {
+      const manifest = await GameService.getGameManifest(baseServer)
+      expect(manifest.worldVolumes).toEqual([{ path: '/data' }])
+    })
+
     it('all env vars follow KEY=VALUE format', async () => {
-      const manifest = await GameService.getManifest(baseServer)
+      const manifest = await GameService.getGameManifest(baseServer)
       for (const env of manifest.env) {
         expect(env).toMatch(/^[A-Z0-9_]+=.+$/)
       }
     })
 
     it('includes EULA from server settings', async () => {
-      const manifest = await GameService.getManifest(baseServer)
+      const manifest = await GameService.getGameManifest(baseServer)
       expect(manifest.env).toContain('EULA=TRUE')
     })
 
     it('includes VERSION from server settings', async () => {
-      const manifest = await GameService.getManifest(baseServer)
+      const manifest = await GameService.getGameManifest(baseServer)
       expect(manifest.env).toContain('VERSION=1.20.1')
     })
 
     it('includes TYPE from server settings', async () => {
-      const manifest = await GameService.getManifest(baseServer)
+      const manifest = await GameService.getGameManifest(baseServer)
       expect(manifest.env).toContain('TYPE=FABRIC')
     })
 
     it('includes MAX_PLAYERS env var', async () => {
-      const manifest = await GameService.getManifest(baseServer)
+      const manifest = await GameService.getGameManifest(baseServer)
       expect(manifest.env.some(e => e.startsWith('MAX_PLAYERS='))).toBe(true)
     })
 
     it('includes VIEW_DISTANCE env var', async () => {
-      const manifest = await GameService.getManifest(baseServer)
+      const manifest = await GameService.getGameManifest(baseServer)
       expect(manifest.env.some(e => e.startsWith('VIEW_DISTANCE='))).toBe(true)
     })
 
     it('includes MOTD env var', async () => {
-      const manifest = await GameService.getManifest(baseServer)
+      const manifest = await GameService.getGameManifest(baseServer)
       expect(manifest.env.some(e => e.startsWith('MOTD='))).toBe(true)
     })
 
@@ -120,7 +125,7 @@ describe('GameService (minecraft)', () => {
         ...baseServer,
         game_settings: { ...baseServer.game_settings, VERSION: '1.21.0' },
       }
-      const manifest = await GameService.getManifest(custom)
+      const manifest = await GameService.getGameManifest(custom)
       expect(manifest.env).toContain('VERSION=1.21.0')
     })
 
@@ -129,19 +134,20 @@ describe('GameService (minecraft)', () => {
         ...baseServer,
         game_settings: { ...baseServer.game_settings, TYPE: 'VANILLA' },
       }
-      const manifest = await GameService.getManifest(custom)
+      const manifest = await GameService.getGameManifest(custom)
       expect(manifest.env).toContain('TYPE=VANILLA')
     })
 
     it('resolves without throwing for valid settings', async () => {
-      await expect(GameService.getManifest(baseServer)).resolves.toBeDefined()
+      await expect(GameService.getGameManifest(baseServer)).resolves.toBeDefined()
     })
 
-    it('returns an object with image, env, and protocols', async () => {
-      const manifest = await GameService.getManifest(baseServer)
+    it('returns an object with image, env, protocols, and worldVolumes', async () => {
+      const manifest = await GameService.getGameManifest(baseServer)
       expect(manifest).toHaveProperty('image')
       expect(manifest).toHaveProperty('env')
       expect(manifest).toHaveProperty('protocols')
+      expect(manifest).toHaveProperty('worldVolumes')
     })
   })
 })

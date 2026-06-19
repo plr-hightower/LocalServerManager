@@ -24,7 +24,7 @@ const mocks = vi.hoisted(() => {
 })
 
 vi.mock('dockerode', () => ({
-  default: vi.fn().mockImplementation(() => mocks.dockerInstance),
+  default: vi.fn().mockImplementation(function () { return mocks.dockerInstance }),
 }))
 
 vi.mock('../../src/repository/db.repository.js', () => ({
@@ -32,7 +32,6 @@ vi.mock('../../src/repository/db.repository.js', () => ({
 }))
 
 import {
-  imageExists,
   createContainer,
   deleteContainer,
   startContainer,
@@ -71,6 +70,7 @@ const baseManifest: GameManifestS = {
   image: 'itzg/minecraft-server:2024.1.0',
   env: ['EULA=TRUE', 'TYPE=FABRIC', 'VERSION=1.20.1'],
   protocols: ['tcp'],
+  worldVolumes: [{ path: '/data' }],
 }
 
 beforeEach(() => {
@@ -83,23 +83,6 @@ beforeEach(() => {
   mocks.dockerInstance.getContainer.mockReturnValue(mocks.container)
   mocks.dockerInstance.createContainer.mockResolvedValue(mocks.container)
   mocks.dockerInstance.listContainers.mockResolvedValue([])
-})
-
-describe('imageExists', () => {
-  it('returns true when the image is found', async () => {
-    mocks.image.inspect.mockResolvedValue({})
-    expect(await imageExists('itzg/minecraft-server')).toBe(true)
-  })
-
-  it('returns false when the image is not found', async () => {
-    mocks.image.inspect.mockRejectedValue(new Error('No such image'))
-    expect(await imageExists('nonexistent-image:latest')).toBe(false)
-  })
-
-  it('calls docker.getImage with the provided image name', async () => {
-    await imageExists('my-image:tag')
-    expect(mocks.dockerInstance.getImage).toHaveBeenCalledWith('my-image:tag')
-  })
 })
 
 describe('createContainer', () => {

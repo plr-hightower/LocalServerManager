@@ -14,6 +14,19 @@ vi.mock('../../src/services/docker.service.js', () => ({
   getDockerStats: vi.fn().mockResolvedValue([]),
 }))
 
+vi.mock('../../src/services/games/minecraft.service.js', () => ({
+  GameService: {
+    getGameManifest: vi.fn().mockResolvedValue({
+      image: 'itzg/minecraft-server:2024.1.0',
+      env: ['EULA=TRUE', 'TYPE=FABRIC', 'VERSION=1.20.1', 'MOTD=Test', 'MAX_PLAYERS=10', 'VIEW_DISTANCE=10'],
+      protocols: ['tcp'],
+      worldVolumes: [{ path: '/data' }],
+    }),
+    getDefaultPort: vi.fn().mockReturnValue('25565'),
+    getHostPort: vi.fn().mockReturnValue(25566),
+  },
+}))
+
 import { serverController } from '../../src/controllers/server.controller.js'
 import { DbService } from '../../src/repository/db.repository.js'
 import * as dockerService from '../../src/services/docker.service.js'
@@ -43,7 +56,7 @@ function makeDbMock(overrides: Partial<InstanceType<typeof DbService>> = {}) {
     getServerList: vi.fn().mockResolvedValue([]),
   }
   const db = { ...defaults, ...overrides }
-  vi.mocked(DbService).mockImplementation(() => db as unknown as InstanceType<typeof DbService>)
+  vi.mocked(DbService).mockImplementation(function () { return db as unknown as InstanceType<typeof DbService> })
   return db
 }
 
