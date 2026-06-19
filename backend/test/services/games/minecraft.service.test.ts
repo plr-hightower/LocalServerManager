@@ -1,0 +1,147 @@
+import { describe, it, expect } from 'vitest'
+import { GameService } from '../../../src/services/games/minecraft.service.js'
+import type { ServerSettingsS } from '@hightower/shared'
+
+const baseServer: ServerSettingsS = {
+  core_settings: {
+    server_id: 1,
+    name: 'test-server',
+    game_container: 'minecraft',
+    container_id: 'abc123def456abc123def456abc123def456abc123def456abc123def456abc1',
+    ram_alloc_mb: 4096,
+    max_num_players: 10,
+    status: 'stopped',
+    host_port: 25565,
+    default_host_port: '25565',
+    created_by: 'admin',
+    created_at: new Date('2026-01-01'),
+  },
+  game_settings: {
+    game: 'minecraft',
+    EULA: 'TRUE',
+    TYPE: 'FABRIC',
+    VERSION: '1.20.1',
+    MOTD: 'Test Server',
+    MAX_PLAYERS: 10,
+    VIEW_DISTANCE: 12,
+  },
+}
+
+describe('GameService (minecraft)', () => {
+  describe('getDefaultPort', () => {
+    it('returns the string "25565"', () => {
+      expect(GameService.getDefaultPort()).toBe('25565')
+    })
+
+    it('returns a string, not a number', () => {
+      expect(typeof GameService.getDefaultPort()).toBe('string')
+    })
+  })
+
+  describe('getHostPort', () => {
+    it('returns 25565 when there are no existing servers', () => {
+      expect(GameService.getHostPort(0)).toBe(25565)
+    })
+
+    it('returns 25566 for the second server', () => {
+      expect(GameService.getHostPort(1)).toBe(25566)
+    })
+
+    it('increments correctly for multiple servers', () => {
+      expect(GameService.getHostPort(5)).toBe(25570)
+      expect(GameService.getHostPort(10)).toBe(25575)
+    })
+
+    it('returns 65535 at the exact limit', () => {
+      const limit = 65535 - 25565
+      expect(GameService.getHostPort(limit)).toBe(65535)
+    })
+
+    it('throws when port would exceed 65535', () => {
+      const overflow = 65535 - 25565 + 1
+      expect(() => GameService.getHostPort(overflow)).toThrow('New host port exceeds the max port count')
+    })
+
+    it('throws for very large server counts', () => {
+      expect(() => GameService.getHostPort(99999)).toThrow()
+    })
+  })
+
+  describe('getManifest', () => {
+    it('returns the correct Docker image', async () => {
+      const manifest = await GameService.getManifest(baseServer)
+      expect(manifest.image).toBe('itzg/minecraft-server:2024.1.0')
+    })
+
+    it('includes tcp in protocols', async () => {
+      const manifest = await GameService.getManifest(baseServer)
+      expect(manifest.protocols).toContain('tcp')
+    })
+
+    it('all env vars follow KEY=VALUE format', async () => {
+      const manifest = await GameService.getManifest(baseServer)
+      for (const env of manifest.env) {
+        expect(env).toMatch(/^[A-Z0-9_]+=.+$/)
+      }
+    })
+
+    it('includes EULA from server settings', async () => {
+      const manifest = await GameService.getManifest(baseServer)
+      expect(manifest.env).toContain('EULA=TRUE')
+    })
+
+    it('includes VERSION from server settings', async () => {
+      const manifest = await GameService.getManifest(baseServer)
+      expect(manifest.env).toContain('VERSION=1.20.1')
+    })
+
+    it('includes TYPE from server settings', async () => {
+      const manifest = await GameService.getManifest(baseServer)
+      expect(manifest.env).toContain('TYPE=FABRIC')
+    })
+
+    it('includes MAX_PLAYERS env var', async () => {
+      const manifest = await GameService.getManifest(baseServer)
+      expect(manifest.env.some(e => e.startsWith('MAX_PLAYERS='))).toBe(true)
+    })
+
+    it('includes VIEW_DISTANCE env var', async () => {
+      const manifest = await GameService.getManifest(baseServer)
+      expect(manifest.env.some(e => e.startsWith('VIEW_DISTANCE='))).toBe(true)
+    })
+
+    it('includes MOTD env var', async () => {
+      const manifest = await GameService.getManifest(baseServer)
+      expect(manifest.env.some(e => e.startsWith('MOTD='))).toBe(true)
+    })
+
+    it('reflects custom VERSION in env', async () => {
+      const custom: ServerSettingsS = {
+        ...baseServer,
+        game_settings: { ...baseServer.game_settings, VERSION: '1.21.0' },
+      }
+      const manifest = await GameService.getManifest(custom)
+      expect(manifest.env).toContain('VERSION=1.21.0')
+    })
+
+    it('reflects custom TYPE in env', async () => {
+      const custom: ServerSettingsS = {
+        ...baseServer,
+        game_settings: { ...baseServer.game_settings, TYPE: 'VANILLA' },
+      }
+      const manifest = await GameService.getManifest(custom)
+      expect(manifest.env).toContain('TYPE=VANILLA')
+    })
+
+    it('resolves without throwing for valid settings', async () => {
+      await expect(GameService.getManifest(baseServer)).resolves.toBeDefined()
+    })
+
+    it('returns an object with image, env, and protocols', async () => {
+      const manifest = await GameService.getManifest(baseServer)
+      expect(manifest).toHaveProperty('image')
+      expect(manifest).toHaveProperty('env')
+      expect(manifest).toHaveProperty('protocols')
+    })
+  })
+})
