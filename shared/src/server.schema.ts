@@ -39,7 +39,7 @@ export const MinecraftSettingsSchema = z.object({
 export const ValheimSettingsSchema = z.object({
     game: z.literal("valheim"),
     SERVER_PASS: z.string().min(5, "Password must be at least 5 characters."),
-    SERVER_PUBLIC: z.literal(false).default(false),
+    SERVER_PUBLIC: z.boolean().default(true),
 });
 
 // all possible settings depending on the game
