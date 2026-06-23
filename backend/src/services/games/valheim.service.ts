@@ -28,7 +28,7 @@ export const GameService: IGameService = {
     getDefaultPort: (): string => '2456',
 
     getHostPort: (numberOfGameServers: number): number => {
-        const port = 2456 + (numberOfGameServers * 2);
+        const port = 4000 + (numberOfGameServers * 2);
         if (port > 65535) {
             throw new Error("New host port exceeds the max port count");
         }
