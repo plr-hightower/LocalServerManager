@@ -12,8 +12,8 @@ export const GameService: IGameService = {
                 `SERVER_NAME=${settings.core_settings.name}`,
                 `WORLD_NAME=${settings.core_settings.name}`,
                 `SERVER_PASS=${gs.SERVER_PASS}`,
+                `SERVER_PUBLIC=false`,
                 `MAX_PLAYERS=${settings.core_settings.max_num_players}`,
-                `SERVER_ARGS=-public 0`,
             ],
             protocols: ['udp'],
             worldVolumes: [
