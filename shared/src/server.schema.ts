@@ -21,7 +21,7 @@ export const CoreServerSettingsSchema = z.object({
 
 // I probably should not nest it like this, instead it should be like a general dep in
 export const MinecraftSettingsSchema = z.object({
-    game: GameEnum,
+    game: z.literal("minecraft"),
     EULA: z.literal("TRUE").default("TRUE"),
     TYPE: z.enum(["VANILLA","PAPER","FABRIC"]).default("FABRIC"),
     VERSION: z.string().default("LATEST"),
@@ -37,7 +37,7 @@ export const MinecraftSettingsSchema = z.object({
 });
 
 export const ValheimSettingsSchema = z.object({
-    game: GameEnum,
+    game: z.literal("valheim"),
     SERVER_PASS: z.string().min(5, "Password must be at least 5 characters."),
     SERVER_PUBLIC: z.literal(false).default(false),
 });
