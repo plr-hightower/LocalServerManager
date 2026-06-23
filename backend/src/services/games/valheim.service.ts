@@ -20,6 +20,7 @@ export const GameService: IGameService = {
             worldVolumes: [
                 { path: "/config" }
             ],
+            extraPorts: [1],
         };
 
         return GameManifestSchema.parse(rawManifest);

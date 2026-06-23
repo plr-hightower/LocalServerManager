@@ -13,6 +13,7 @@ export const GameManifestSchema = z.object({
     env: z.array(z.string().regex(/^[A-Z0-9_]+=.+$/)), // Validates "KEY=VALUE" format
     protocols: z.array(z.enum(["tcp", "udp"])).default(["tcp"]),
     worldVolumes: z.array(VolumeMountSchema),
+    extraPorts: z.array(z.number().int()).default([]),
 });
 
 export const ContainerStatSchema = z.object({

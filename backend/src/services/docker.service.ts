@@ -17,9 +17,10 @@ async function imageExists(image:string): Promise<boolean>{
     }
 }
 async function createContainer(settings: ServerSettingsS, manifest: GameManifestS): Promise<string> {
-    if(!settings.core_settings.default_host_port || !settings.core_settings.host_port){
+    if (!settings.core_settings.default_host_port || !settings.core_settings.host_port) {
         throw new Error("core_settings default hostport not set");
     }
+
     const ExposedPorts: Record<string, {}> = {};
     const PortBindings: Record<string, Array<{ HostPort: string }>> = {};
 
@@ -29,25 +30,32 @@ async function createContainer(settings: ServerSettingsS, manifest: GameManifest
     for (const protocol of manifest.protocols) {
         const portKey = `${settings.core_settings.default_host_port}/${protocol}`;
         const hostPortStr = settings.core_settings.host_port.toString();
-
         ExposedPorts[portKey] = {};
         PortBindings[portKey] = [{ HostPort: hostPortStr }];
+
+        for (const offset of manifest.extraPorts) {
+            const extraDefaultPort = (parseInt(settings.core_settings.default_host_port) + offset).toString();
+            const extraHostPort = (settings.core_settings.host_port + offset).toString();
+            const extraPortKey = `${extraDefaultPort}/${protocol}`;
+            ExposedPorts[extraPortKey] = {};
+            PortBindings[extraPortKey] = [{ HostPort: extraHostPort }];
+        }
     }
+
     const container = await docker.createContainer({
         Image: manifest.image,
-        name: `${settings.core_settings.name}`, 
+        name: settings.core_settings.name,
         Env: manifest.env,
         ExposedPorts,
         HostConfig: {
             PortBindings,
-            Binds: manifest.worldVolumes.map( v => toBind( settings.core_settings.name, v)),
+            Binds: manifest.worldVolumes.map(v => toBind(settings.core_settings.name, v)),
             RestartPolicy: { Name: 'unless-stopped' },
-            Memory: settings.core_settings.ram_alloc_mb * 1024 * 1024 
+            Memory: settings.core_settings.ram_alloc_mb * 1024 * 1024,
         }
     });
 
     await container.start();
-    
     return container.id;
 }
 
