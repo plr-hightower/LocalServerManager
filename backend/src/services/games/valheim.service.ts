@@ -10,6 +10,7 @@ export const GameService: IGameService = {
             image: 'lloesche/valheim-server',
             env: [
                 `SERVER_NAME=${settings.core_settings.name}`,
+                `SERVER_PORT=${settings.core_settings.host_port}`,
                 `WORLD_NAME=${settings.core_settings.name}`,
                 `SERVER_PASS=${gs.SERVER_PASS}`,
                 `SERVER_PUBLIC=true`,
