@@ -13,6 +13,10 @@ export const GameManifestSchema = z.object({
     env: z.array(z.string().regex(/^[A-Z0-9_]+=.+$/)), // Validates "KEY=VALUE" format
     protocols: z.array(z.enum(["tcp", "udp"])).default(["tcp"]),
     worldVolumes: z.array(VolumeMountSchema),
+    extraPorts: z.array(z.number().int()).default([]),
+    // Steam hosted games need to have this true since steam gets the port in the container
+    // hence we gotta map that shit to itself inside aswell
+    useHostPort: z.boolean().default(false),
 });
 
 export const ContainerStatSchema = z.object({

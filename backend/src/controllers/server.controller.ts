@@ -39,16 +39,20 @@ const buildServer = async (req:Request, res:Response) => {
 
 
         // Setting up the settings
-        const game:GameE = settings.core_settings.game_container;
+        const game: GameE = settings.core_settings.game_container;
         const gameService = await getGameService(settings);
-        const manifest: GameManifestS = await gameService.getGameManifest(settings);
 
+        // Set ports before the manifest, else will not work
+        // TODO: make the order irrelevant
         settings.core_settings.default_host_port = gameService.getDefaultPort();
         settings.core_settings.host_port = gameService.getHostPort((await db.getServersByGame(game)).length);
 
-        settings.core_settings.container_id = await createContainer(settings,manifest);
+        const manifest: GameManifestS = await gameService.getGameManifest(settings);
 
+
+        settings.core_settings.container_id = await createContainer(settings,manifest);
         const insertId:number = await db.logNewServer(settings);
+
         console.log(insertId);
         res.status(200).json(insertId);
 

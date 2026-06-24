@@ -17,9 +17,10 @@ async function imageExists(image:string): Promise<boolean>{
     }
 }
 async function createContainer(settings: ServerSettingsS, manifest: GameManifestS): Promise<string> {
-    if(!settings.core_settings.default_host_port || !settings.core_settings.host_port){
+    if (!settings.core_settings.default_host_port || !settings.core_settings.host_port) {
         throw new Error("core_settings default hostport not set");
     }
+
     const ExposedPorts: Record<string, {}> = {};
     const PortBindings: Record<string, Array<{ HostPort: string }>> = {};
 
@@ -27,27 +28,38 @@ async function createContainer(settings: ServerSettingsS, manifest: GameManifest
     // I need a tracking section in the db to keep track of everything
     // Loop through the protocols (e.g., ["tcp", "udp"]) and bind each one
     for (const protocol of manifest.protocols) {
-        const portKey = `${settings.core_settings.default_host_port}/${protocol}`;
-        const hostPortStr = settings.core_settings.host_port.toString();
+        const internalPort: string = manifest.useHostPort
+            ? settings.core_settings.host_port.toString()
+            : settings.core_settings.default_host_port!;
+        const hostPortStr: string = settings.core_settings.host_port.toString();
 
+        const portKey = `${internalPort}/${protocol}`;
         ExposedPorts[portKey] = {};
         PortBindings[portKey] = [{ HostPort: hostPortStr }];
+
+        for (const offset of manifest.extraPorts) {
+            const extraInternal = (parseInt(internalPort) + offset).toString();
+            const extraExternal = (settings.core_settings.host_port + offset).toString();
+            const extraPortKey = `${extraInternal}/${protocol}`;
+            ExposedPorts[extraPortKey] = {};
+            PortBindings[extraPortKey] = [{ HostPort: extraExternal }];
+        }
     }
+
     const container = await docker.createContainer({
         Image: manifest.image,
-        name: `${settings.core_settings.name}`, 
+        name: settings.core_settings.name,
         Env: manifest.env,
         ExposedPorts,
         HostConfig: {
             PortBindings,
-            Binds: manifest.worldVolumes.map( v => toBind( settings.core_settings.name, v)),
+            Binds: manifest.worldVolumes.map(v => toBind(settings.core_settings.name, v)),
             RestartPolicy: { Name: 'unless-stopped' },
-            Memory: settings.core_settings.ram_alloc_mb * 1024 * 1024 
+            Memory: settings.core_settings.ram_alloc_mb * 1024 * 1024,
         }
     });
 
     await container.start();
-    
     return container.id;
 }
 
