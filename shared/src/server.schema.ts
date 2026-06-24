@@ -6,7 +6,7 @@ export const StatusEnum = z.enum(["started","starting","stopped","stopping","err
 
 export const CoreServerSettingsSchema = z.object({
     server_id: z.number().int().optional(),
-    name: z.string(),
+    name: z.string().regex(/^[a-zA-Z0-9_-]+$/, "Name can only contain letters, numbers, underscores and dashes"),
     game_container: GameEnum,
     container_id: z.string().max(64),
     ram_alloc_mb: RamAllocMbEnum,
@@ -21,7 +21,7 @@ export const CoreServerSettingsSchema = z.object({
 
 // I probably should not nest it like this, instead it should be like a general dep in
 export const MinecraftSettingsSchema = z.object({
-    game: GameEnum,
+    game: z.literal("minecraft"),
     EULA: z.literal("TRUE").default("TRUE"),
     TYPE: z.enum(["VANILLA","PAPER","FABRIC"]).default("FABRIC"),
     VERSION: z.string().default("LATEST"),
@@ -36,9 +36,15 @@ export const MinecraftSettingsSchema = z.object({
     //TODO: ADD RCON PASSWORD
 });
 
+export const ValheimSettingsSchema = z.object({
+    game: z.literal("valheim"),
+    SERVER_PASS: z.string().min(5, "Password must be at least 5 characters."),
+});
+
 // all possible settings depending on the game
 export const GameSettingsSchema = z.discriminatedUnion("game",[
-    MinecraftSettingsSchema
+    MinecraftSettingsSchema,
+    ValheimSettingsSchema,
 ]);
 
 // Since we don't want the user to play with certain values, we ommit them
@@ -55,6 +61,8 @@ export const CreateServerRequestSchema = z.object({
 });
 
 export const DeleteServerRequestSchema = CoreServerSettingsSchema.pick({name: true, created_by: true});
+
+
 export const ServerActionSchema = z.object({
     name: z.string(),
     action: StatusEnum,
@@ -74,3 +82,5 @@ export type CreateServerRequestS = z.infer<typeof CreateServerRequestSchema>;
 export type DeleteServerRequestS = z.infer<typeof DeleteServerRequestSchema>;
 export type ServerSettingsS = z.infer<typeof ServerSettingsSchema>;
 export type ServerActionS = z.infer<typeof ServerActionSchema>;
+export type ValheimSettingsS = z.infer<typeof ValheimSettingsSchema>;
+export type MinecraftSettingsS = z.infer<typeof MinecraftSettingsSchema>;
