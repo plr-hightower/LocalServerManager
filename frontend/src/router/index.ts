@@ -7,28 +7,12 @@ import CreateServerPage from '../components/pages/CreateServerPage.vue';
 const router = createRouter({
     history: createWebHistory(),
     routes: [
-        {
-            path: '/dashboard',
-            name: 'Dashboard',
-            component: DashboardPage,
-        },
-        {
-            path: '/serverList',
-            name: 'ServerList',
-            component: ServerListPage,
-        },
-        {
-            path: '/serverDetail',
-            name: 'ServerDetail',
-            component: ServerDetailPage,
-        },
-        {
-            path: '/createServer',
-            name: 'CreateServer',
-            component: CreateServerPage,
-
-        }
-    ]
+        { path: '/', redirect: '/serverList' },
+        { path: '/dashboard',     name: 'Dashboard',    component: DashboardPage },
+        { path: '/serverList',    name: 'ServerList',   component: ServerListPage },
+        { path: '/servers/:id',   name: 'ServerDetail', component: ServerDetailPage, props: true },
+        { path: '/createServer',  name: 'CreateServer', component: CreateServerPage },
+    ],
 });
 
 export default router;

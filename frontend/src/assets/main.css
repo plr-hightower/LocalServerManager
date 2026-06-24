@@ -144,7 +144,9 @@ code,
   transition: color var(--transition), background var(--transition);
 }
 
-.nav__link:hover { color: var(--color-primary); }
+.nav__link:hover {
+  color: var(--color-primary);
+}
 
 /* vue-router adds these automatically to the active <RouterLink> */
 .nav__link.router-link-active {
@@ -213,6 +215,13 @@ code,
   gap: var(--gap-md);
 }
 
+.server-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-sm);
+  margin-bottom: var(--gap-lg);
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;
@@ -229,7 +238,9 @@ code,
   transition: background var(--transition), border-color var(--transition), opacity var(--transition);
 }
 
-.btn:hover { background: var(--color-hover); }
+.btn:hover {
+  background: var(--color-hover);
+}
 
 .btn:disabled {
   opacity: 0.5;
@@ -340,7 +351,9 @@ code,
   transition: background var(--transition);
 }
 
-.table__row--clickable:hover { background: var(--color-hover); } 
+.table__row--clickable:hover {
+  background: var(--color-hover);
+}
 
 /* Forms */
 .form-field {
@@ -387,6 +400,13 @@ code,
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: var(--gap-md);
+}
+
+.stat-line {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: var(--gap-sm);
 }
 
 .stat {

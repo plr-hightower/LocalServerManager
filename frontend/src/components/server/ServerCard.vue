@@ -28,19 +28,9 @@
             </div>
 
             <div class="server-card__actions">
-                <button
-                    v-if="!isRunning"
-                    class="btn btn--primary btn--sm"
-                    @click="emit('start', server)"
-                >Start</button>
-                <button
-                    v-else
-                    class="btn btn--ghost btn--sm"
-                    @click="emit('stop', server)"
-                >Stop</button>
-
+                <ServerControls :server="server" />
                 <button class="btn btn--ghost btn--sm" @click="emit('open', server)">Details</button>
-                <button class="btn btn--danger btn--sm" @click="emit('delete', server)">Delete</button>
+                <button class="btn btn--ghost btn--sm" @click="emit('delete', server)">Delete</button>
             </div>
         </div>
     </div>
@@ -49,16 +39,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ServerSettingsS } from '@hightower/shared';
+import ServerControls from '@/components/server/ServerControls.vue';
 
 const props = defineProps<{
     server: ServerSettingsS
 }>()
 
 const emit = defineEmits<{
-    start: [server: ServerSettingsS],
-    stop: [server: ServerSettingsS],
     open: [server: ServerSettingsS],
-    delete: [server: ServerSettingsS]
+    delete: [server: ServerSettingsS],
 }>();
 
 const isRunning = computed(() => ['started', 'starting'].includes(props.server.core_settings.status));
