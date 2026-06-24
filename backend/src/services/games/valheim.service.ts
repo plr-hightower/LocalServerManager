@@ -21,6 +21,7 @@ export const GameService: IGameService = {
                 { path: "/config" }
             ],
             extraPorts: [1],
+            useHostPort: true,
         };
 
         return GameManifestSchema.parse(rawManifest);

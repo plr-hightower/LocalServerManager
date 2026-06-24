@@ -24,6 +24,7 @@ export const GameService: IGameService = {
             worldVolumes: [
                 { path: "/data" }
             ],
+            useHostPort: false,
         };
 
         // Validate the output before returning it

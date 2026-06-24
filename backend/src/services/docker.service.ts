@@ -28,16 +28,21 @@ async function createContainer(settings: ServerSettingsS, manifest: GameManifest
     // I need a tracking section in the db to keep track of everything
     // Loop through the protocols (e.g., ["tcp", "udp"]) and bind each one
     for (const protocol of manifest.protocols) {
-        const hostPortStr:string = settings.core_settings.host_port.toString();
-        const portKey = `${hostPortStr}/${protocol}`;
+        const internalPort: string = manifest.useHostPort
+            ? settings.core_settings.host_port.toString()
+            : settings.core_settings.default_host_port!;
+        const hostPortStr: string = settings.core_settings.host_port.toString();
+
+        const portKey = `${internalPort}/${protocol}`;
         ExposedPorts[portKey] = {};
         PortBindings[portKey] = [{ HostPort: hostPortStr }];
 
         for (const offset of manifest.extraPorts) {
-            const extraPort = (settings.core_settings.host_port + offset).toString();
-            const extraPortKey = `${extraPort}/${protocol}`;
+            const extraInternal = (parseInt(internalPort) + offset).toString();
+            const extraExternal = (settings.core_settings.host_port + offset).toString();
+            const extraPortKey = `${extraInternal}/${protocol}`;
             ExposedPorts[extraPortKey] = {};
-            PortBindings[extraPortKey] = [{ HostPort: extraPort }];
+            PortBindings[extraPortKey] = [{ HostPort: extraExternal }];
         }
     }
 
