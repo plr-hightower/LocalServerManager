@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Added frontend
 - Added server schemas 
 - Added server router
 - Added server controller with functions to manage the servers
