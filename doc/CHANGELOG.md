@@ -13,6 +13,8 @@
 - Added github action pipeline to check changelog in PR's
 - Added World file downloads
 - Added backend testing framework
+- Added different container port to app port configs for games
+- Added valheim manifest
 
 ### Fixed
 - Dockerfiles updated and docker compose aswell.
