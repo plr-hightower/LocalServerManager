@@ -1,5 +1,5 @@
 import { ref, toValue, type MaybeRefOrGetter } from 'vue';
-import type { ServerSettingsS, StatusE } from '@hightower/shared';
+import { StatusEnum, type ServerSettingsS, type StatusE } from '@hightower/shared';
 import { useServerStore } from '@/stores/serverStore';
 
 export function useServerStatus(server: MaybeRefOrGetter<ServerSettingsS>) {
@@ -17,7 +17,7 @@ export function useServerStatus(server: MaybeRefOrGetter<ServerSettingsS>) {
 
     return {
         pending,
-        start: () => change('started'),
-        stop:  () => change('stopped'),
+        start: () => change(StatusEnum.enum.started),
+        stop:  () => change(StatusEnum.enum.stopped),
     };
 }

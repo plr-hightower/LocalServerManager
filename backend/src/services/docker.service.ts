@@ -88,7 +88,7 @@ async function getDockerStats(servers: ServerSettingsS[]): Promise<ContainerStat
 
             const cpuDelta = stat.cpu_stats.cpu_usage.total_usage - stat.precpu_stats.cpu_usage.total_usage;
             const systemDelta = stat.cpu_stats.system_cpu_usage - stat.precpu_stats.system_cpu_usage;
-            const cpuUsagePercent = (cpuDelta / systemDelta) * stat.cpu_stats.online_cpus * 100;
+            const cpuUsagePercent = (cpuDelta / systemDelta) * 100;
 
             const memoryUsageMb = stat.memory_stats.usage / 1024 / 1024;
             const memoryLimitMb = stat.memory_stats.limit / 1024 / 1024;

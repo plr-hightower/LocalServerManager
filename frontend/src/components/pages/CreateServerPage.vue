@@ -61,25 +61,25 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import type { GameE, RamAllocMbE, CreateServerRequestS } from '@hightower/shared';
+import { GameEnum, RamAllocMbEnum, type GameE, type RamAllocMbE, type CreateServerRequestS } from '@hightower/shared';
 import { useServerStore } from '@/stores/serverStore';
 import { useServerForm } from '@/composables/useServerForm';
 
 const router = useRouter();
 const store = useServerStore();
 
-const games: GameE[] = ['minecraft']; // valheim once its schema + backend exist
-const ramOptions: RamAllocMbE[] = [1024, 2048, 4096, 8192];
+const games = GameEnum.options;
+const ramOptions = RamAllocMbEnum.values;
 
 const core = reactive({
     name: '',
     game_container: 'minecraft' as GameE,
     ram_alloc_mb: 2048 as RamAllocMbE,
     max_num_players: 5,
-    created_by: 'edoucet',
+    created_by: 'unknown user',
 });
 
-const { fields, model } = useServerForm(() => core.game_container, { hide: ['MAX_PLAYERS'] });
+const { fields, model } = useServerForm(() => core.game_container );
 
 const submitting = ref(false);
 const error = ref<string | null>(null);
@@ -90,7 +90,7 @@ async function submit() {
     try {
         const payload = {
             core_settings: { ...core },
-            game_settings: { ...model.value, MAX_PLAYERS: core.max_num_players }, // derive the hidden field
+            game_settings: { ...model.value}, // derive the hidden field
         } as CreateServerRequestS;
         await store.create(payload);
         router.push('/serverList');

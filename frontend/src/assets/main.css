@@ -12,19 +12,19 @@
    that describe colors, spacing, and other design attributes */
 :root {
   /* surfaces */
-  --color-bg: #0a0a0b;
-  --color-surface: #141416;
-  --color-surface-2: #1f1f23;
-  --color-border: #2e2e34;
-  --color-hover: #2a1416;
+  --color-bg: #0b0914;
+  --color-surface: #13102a;
+  --color-surface-2: #1c183a;
+  --color-border: #2c2650;
+  --color-hover: #211b40;
 
   /* text */
-  --color-text: #f2f2f4;
-  --color-muted: #97979f;
+  --color-text: #ede9ff;
+  --color-muted: #9086b8;
 
   /* user intent */
-  --color-primary: #e5484d;
-  --color-primary-hover: #f06066;
+  --color-primary: #0044c1;
+  --color-primary-hover: #0051ff;
   --color-danger: #8b1f1f;
   --color-danger-hover: #a52424;
   --color-success: #46a758;
@@ -32,7 +32,7 @@
   /* status */
   --status-started: #46a758;
   --status-starting: #f5a623;
-  --status-stopped: #6b7280;
+  --status-stopped: #8b4545;
   --status-stopping: #f5a623;
   --status-error: #e5484d;
 

@@ -31,6 +31,6 @@ COPY --from=builder /app/scripts ./scripts
 
 RUN npm install --omit=dev
 
-EXPOSE 3000
+EXPOSE 4532
 WORKDIR /app/backend
 CMD ["node", "dist/server.js"]

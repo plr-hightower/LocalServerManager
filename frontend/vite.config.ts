@@ -10,4 +10,9 @@ export default defineConfig({
       '@hightower/shared': fileURLToPath(new URL('../shared', import.meta.url))
     },
   },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:4532',
+    },
+  },
 })

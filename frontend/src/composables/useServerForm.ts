@@ -1,11 +1,11 @@
 import { ref, computed, watch, toValue, type MaybeRefOrGetter } from 'vue';
 import * as z from 'zod';
-import { MinecraftSettingsSchema, type GameE } from '@hightower/shared';
+import { GameSettingsSchema, type GameE } from '@hightower/shared';
 
-// game -> its settings schema (add more games when they exist)
-const SCHEMAS: Record<string, z.ZodType> = {
-    minecraft: MinecraftSettingsSchema,
-};
+// derived from the discriminated union — adding a game to GameSettingsSchema is enough
+const SCHEMAS: Record<string, z.ZodType> = Object.fromEntries(
+    GameSettingsSchema.options.map(schema => [schema.shape.game.value, schema])
+);
 
 export interface FormField {
     key: string;

@@ -15,5 +15,6 @@ RUN cd frontend && /app/node_modules/.bin/vue-tsc --noEmit --project tsconfig.js
 
 FROM nginx:alpine
 COPY --from=build /app/frontend/dist /usr/share/nginx/html
+COPY frontend/nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80

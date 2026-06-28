@@ -1,4 +1,4 @@
-import type { ServerSettingsS, CreateServerRequestS, StatusE } from '@hightower/shared';
+import type { ServerSettingsS, CreateServerRequestS, StatusE, HealthCheckResponseS } from '@hightower/shared';
 
 const BASE = '/api/server';
 
@@ -23,4 +23,6 @@ export const serverService = {
         request<number>('/buildServer', { method: 'POST', body: JSON.stringify(payload) }),
     setStatus: (name: string, action: StatusE) =>
         request<{ success: boolean }>('/status', { method: 'POST', body: JSON.stringify({ name, action }) }),
+    healthCheck: () =>
+        request<HealthCheckResponseS>('/healthCheck'),
 };

@@ -7,16 +7,16 @@
             </button>
         </div>
 
-        <div v-if="store.loading" class="loading"><div class="spinner"></div></div>
+        <div v-if="serverStore.loading" class="loading"><div class="spinner"></div></div>
 
-        <div v-else-if="store.error" class="empty-state">{{ store.error }}</div>
+        <div v-else-if="serverStore.error" class="empty-state">{{ serverStore.error }}</div>
 
-        <div v-else-if="store.servers.length" class="server-grid">
+        <div v-else-if="serverStore.servers.length" class="server-grid">
             <ServerCard
-                v-for="server in store.visibleServers"
+                v-for="server in serverStore.visibleServers"
                 :key="server.core_settings.server_id"
                 :server="server"
-                @delete="store.dismiss"
+                @delete="serverStore.dismiss"
                 @open="goToDetail"
             />
         </div>
@@ -28,14 +28,14 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useServerStore } from '@/stores/serverStore';
 import type { ServerSettingsS } from '@hightower/shared';
 import ServerCard from '@/components/server/ServerCard.vue';
+import { useServerStore } from '@/stores/serverStore';
 
 const router = useRouter();
-const store = useServerStore();
+const serverStore = useServerStore();
 
-onMounted(store.fetchServers); // populate from the DB on entry
+onMounted(serverStore.fetchServers); // populate from the DB on entry
 
 function goToDetail(server: ServerSettingsS) {
     router.push(`/servers/${server.core_settings.server_id}`);

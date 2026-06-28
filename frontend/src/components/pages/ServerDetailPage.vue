@@ -13,7 +13,7 @@
                 <div class="server-card__meta">
                     <div><span class="label">Game</span><span class="mono">{{ server.core_settings.game_container }}</span></div>
                     <div><span class="label">Port</span><span class="mono">{{ server.core_settings.host_port ?? '—' }}</span></div>
-                    <div><span class="label">Players</span><span>{{ server.core_settings.max_num_players }}</span></div>
+                    <div><span class="label">Max Players</span><span>{{ server.core_settings.max_num_players }}</span></div>
                     <div><span class="label">RAM</span><span>{{ server.core_settings.ram_alloc_mb / 1024 }} GB</span></div>
                 </div>
 
@@ -34,9 +34,9 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import type { ContainerStatS } from '@hightower/shared';
 import { useServerStore } from '@/stores/serverStore';
 import { useServerForm } from '@/composables/useServerForm';
+import { useHealthCheck } from '@/composables/useHealthCheck';
 import ServerControls from '@/components/server/ServerControls.vue';
 import ServerStats from '@/components/server/ServerStats.vue';
 
@@ -49,8 +49,8 @@ const server = computed(() => store.getById(Number(route.params.id)));
 
 const { fields, model } = useServerForm(
     () => server.value?.core_settings.game_container ?? 'minecraft',
-    { initial: () => server.value?.game_settings, readonly: true, hide: ['MAX_PLAYERS'] },
+    { initial: () => server.value?.game_settings, readonly: true },
 );
 
-const stats = computed<ContainerStatS | null>(() => null);   // TODO: wire useHealthCheck
+const { stats } = useHealthCheck(server);
 </script>
