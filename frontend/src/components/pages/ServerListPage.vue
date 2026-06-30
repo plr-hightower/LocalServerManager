@@ -2,8 +2,7 @@
     <div class="page">
         <div class="page__header">
             <h1>Servers</h1>
-            <!-- <button class="btn btn--primary" @click="router.push('/createServer')"> -->
-            <button class="btn btn--primary">
+            <button class="btn btn--primary" @click="router.push('/createServer')">
                 + Create Server
             </button>
         </div>
