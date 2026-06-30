@@ -11,6 +11,7 @@ RUN npm install
 COPY shared/ ./shared/
 COPY frontend/ ./frontend/
 
+RUN /app/node_modules/.bin/tsc --project shared/tsconfig.json
 RUN cd frontend && /app/node_modules/.bin/vue-tsc --noEmit --project tsconfig.json && /app/node_modules/.bin/vite build
 
 FROM nginx:alpine
