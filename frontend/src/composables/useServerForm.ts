@@ -4,9 +4,13 @@ import { GameSettingsSchema, type GameE } from '@hightower/shared';
 
 // derived from the discriminated union — adding a game to GameSettingsSchema is enough
 const SCHEMAS: Record<string, z.ZodType> = Object.fromEntries(
-    GameSettingsSchema.options.map(schema => [schema.shape.game.value, schema])
+    // zod v4 types the discriminator as a merged ZodEnum, but at runtime it's the branch's
+    // ZodLiteral — cast to the real type to read its value
+    GameSettingsSchema.options.map(schema => [
+        (schema.shape.game as unknown as z.ZodLiteral<GameE>).value,
+        schema,
+    ]),
 );
-
 export interface FormField {
     key: string;
     type: 'text' | 'number' | 'select' | 'fixed';

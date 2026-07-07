@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { ServerSettingsS, StatusE, CreateServerRequestS } from '@hightower/shared';
-import { serverService } from '@/services/serverService';
+import type { ServerSettingsS, StatusE, CreateServerRequestS, HealthCheckResponseS } from '@hightower/shared';
+import { api } from '@/services/http';
 
 export const useServerStore = defineStore('servers', () => {
     // States
@@ -45,7 +45,8 @@ export const useServerStore = defineStore('servers', () => {
         loading.value = true;
         error.value = null;
         try {
-            servers.value = await serverService.listServers(); // null → [] handled in service
+            const { data } = await api.get<ServerSettingsS[] | null>('/server/listServers');
+            servers.value = data ?? []; // null → []
         } catch (e) {
             error.value = e instanceof Error ? e.message : 'Failed to load servers';
         } finally {
@@ -55,27 +56,37 @@ export const useServerStore = defineStore('servers', () => {
 
     // each mutation re-mirrors the DB afterwards (DB = source of truth)
     async function create(payload: CreateServerRequestS) {
-        await serverService.buildServer(payload);
+        await api.post<number>('/server/buildServer', payload);
         await fetchServers();
     }
 
     async function changeStatus(server: ServerSettingsS, action: StatusE) {
-        await serverService.setStatus(server.core_settings.name, action);
+        await api.post<{ success: boolean }>('/server/status', {
+            name: server.core_settings.name,
+            action,
+        });
         await fetchServers();
     }
 
+    // health is transient/per-container, so the action returns it rather than storing it
+    async function fetchHealth(): Promise<HealthCheckResponseS> {
+        const { data } = await api.get<HealthCheckResponseS>('/server/healthCheck');
+        return data;
+    }
+
     return {
-        servers, 
-        loading, 
+        servers,
+        loading,
         error,
-        getById, 
-        getByName, 
-        total, 
-        running, 
+        getById,
+        getByName,
+        total,
+        running,
         statusCounts,
-        fetchServers, 
-        create, 
+        fetchServers,
+        create,
         changeStatus,
+        fetchHealth,
         visibleServers,
         dismiss,
     };
