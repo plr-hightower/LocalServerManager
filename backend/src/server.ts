@@ -7,11 +7,12 @@ import { error } from "console";
 import serverRouter from "./routes/server.routes.js";
 import worldRouter from "./routes/world.routes.js"
 
-import Docker, { Container } from 'dockerode';
 import express from 'express';
 import morgan from 'morgan';
+import { logger, closeLogger } from './logger.js'
 import { DbService } from "./repository/db.repository.js";
 import { watchContainerEvents } from "./services/docker.service.js";
+import { pinoHttp } from "pino-http";
 
 const app = express();
 const db = new DbService();
@@ -19,11 +20,22 @@ await watchContainerEvents(db);
 // listen for requests 
 app.listen(4532);
 
+// Logger killing itself properly when server dies ( keeping as many logs as possible)
+process.on('SIGTERM', async () => {
+  await closeLogger();
+  process.exit(0);
+});
+process.on('SIGINT', async () => {
+  await closeLogger();
+  process.exit(0);
+});
+
 // middleware and static files 
 // here we say to the browser that the files in this folder called
 // "public" are accessible (goooon)
 app.use(express.static('public'));
 app.use(express.json()); // since we will not be parsing html (cuz vite) we only want to parse post requests that are json
+app.use(pinoHttp({ logger }))
 app.use(morgan('dev')); // third party middleware
 
 app.use("/api/server", serverRouter);
