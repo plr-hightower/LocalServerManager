@@ -18,6 +18,7 @@ services:
       - .env
     environment:
       - DB_HOST=database
+      - SEQ_URL=http://seq
     ports:
       - "4532:4532"
     volumes:
@@ -27,6 +28,27 @@ services:
       database:
         condition: service_healthy
 
+  dozzle:
+    image: amir20/dozzle:latest
+    restart: unless-stopped
+    environment:
+      DOZZLE_BASE: /dozzle
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  seq:
+    image: datalust/seq:latest
+    restart: unless-stopped
+    ports:
+      - "5341:80"
+    environment:
+      ACCEPT_EULA: Y
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "True"
+    volumes:
+      - seq_data:/data
+  
   database:
     image: mysql:8
     restart: always
@@ -48,3 +70,4 @@ services:
 
 volumes:
   mysqldata:
+  seq_data:
