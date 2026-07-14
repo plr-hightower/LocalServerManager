@@ -16,7 +16,7 @@
 - Added backend testing framework
 - Added different container port to app port configs for games
 - Added valheim manifest
-- Added dashboard for logging
+- Added dashboard for logging with dozzle and seq.
 
 ### Fixed
 - Dockerfiles updated and docker compose aswell.
