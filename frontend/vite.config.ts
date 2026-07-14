@@ -15,20 +15,28 @@ export default defineConfig({
       '/api': 'http://localhost:4532',
       '/dozzle': {
         target: 'http://localhost:8080',
+        ws: true,
         configure: (proxy) => {
           proxy.on('proxyRes', (proxyRes) => {
             delete proxyRes.headers['x-frame-options']
             delete proxyRes.headers['content-security-policy']
           })
+          proxy.on('error', (err) => {
+            console.error('dozzle proxy error:', err.message)
+          })
         },
       },
       '/seq': {
         target: 'http://localhost:5341',
+        ws: true,
         rewrite: (path) => path.replace(/^\/seq/, ''),
         configure: (proxy) => {
           proxy.on('proxyRes', (proxyRes) => {
             delete proxyRes.headers['x-frame-options']
             delete proxyRes.headers['content-security-policy']
+          })
+          proxy.on('error', (err) => {
+            console.error('seq proxy error:', err.message)
           })
         },
       },
