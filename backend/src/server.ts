@@ -29,6 +29,12 @@ process.on('SIGINT', async () => {
   await closeLogger();
   process.exit(0);
 });
+process.on('uncaughtException', (err) => {
+  logger.error({ err }, 'Uncaught exception');
+});
+process.on('unhandledRejection', (err) => {
+  logger.error({ err }, 'Unhandled rejection');
+});
 
 // middleware and static files 
 // here we say to the browser that the files in this folder called

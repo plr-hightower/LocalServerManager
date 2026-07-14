@@ -6,6 +6,7 @@ import { DbService } from "../repository/db.repository.js";
 import { success, ZodError } from "zod";
 import { createContainer, deleteContainer, getDockerStats, startContainer, stopContainer } from "../services/docker.service.js";
 import { getGameService, getManifest } from "../services/game.service.js";
+import { logger } from "../logger.js";
 
 
 
@@ -15,8 +16,9 @@ const buildServer = async (req:Request, res:Response) => {
         const db = new DbService();
 
         const requestSettings:CreateServerRequestS = CreateServerRequestSchema.parse(req.body);
-        console.log("successfully parsed");
+        logger.info("Successfully parsed create server request.");
 
+        logger.info({params : requestSettings},`Building server with the following params`);
         const settings:ServerSettingsS =  ServerSettingsSchema.parse({
         ...requestSettings,
         core_settings: {
@@ -169,6 +171,7 @@ const deleteServer = async (req:Request, res:Response) => {
 
 const getServerList = async (req:Request, res:Response) => {
     try {
+        logger.info("Getting the server list.");
         const db:DbService = new DbService();
         res.status(200).json(await db.getServerList());
 
