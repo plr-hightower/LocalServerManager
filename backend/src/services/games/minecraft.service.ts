@@ -11,7 +11,7 @@ export const GameService: IGameService = {
         const gs = settings.game_settings as MinecraftSettingsS;
 
         const rawManifest = {
-            image: 'itzg/minecraft-server:2024.1.0',
+            image: 'itzg/minecraft-server:2026.7.0-java21',
             env: [
                 `EULA=${gs.EULA}`,
                 `TYPE=${gs.TYPE}`,
