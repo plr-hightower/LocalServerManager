@@ -7,6 +7,7 @@ import { success, ZodError } from "zod";
 import { createContainer, deleteContainer, getDockerStats, startContainer, stopContainer } from "../services/docker.service.js";
 import { getGameService, getManifest } from "../services/game.service.js";
 import { logger } from "../logger.js";
+import { error } from "console";
 
 
 
@@ -32,8 +33,21 @@ const buildServer = async (req:Request, res:Response) => {
         });
         // ServerID is set automatically by db
 
+        const maxTotalServers = Number(process.env.MAX_TOTAL_SERVERS ?? 40);
+        const maxServersWithinWindow = Number(process.env.MAX_SERVERS_WITHIN_WINDOW ?? 1);
+        const window = Number(process.env.CREATE_SERVER_WINDOW_MINUTES ?? 60);
+        const timeElapsedSinceBuild = new Date(Date.now() - window * 60 * 1000);
 
-
+        if (await db.countServers() <= maxTotalServers){
+            return res.status(429).json({
+                error: "Max servers limit reached."
+            });
+        }
+        if (await db.countServersSince(timeElapsedSinceBuild) >= maxServersWithinWindow) {
+            return res.status(429).json({
+                error: `Server creation limit reached: max ${maxServersWithinWindow} per ${window} minute(s).`
+            });
+        }
         if(await db.getServerByName(settings.core_settings.name) !== null){
             //Find the proper status eventually
             return res.status(400).json("Server name already exists");

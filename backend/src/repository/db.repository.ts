@@ -64,6 +64,19 @@ export class DbService {
     }
   }
 
+  async countServers(){
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      'SELECT COUNT(*) as count FROM servers'
+    );
+    return Number(rows[0].count);
+  }
+  async countServersSince(since: Date): Promise<number>{
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      'SELECT COUNT(*) as count FROM servers WHERE created_at > ?',
+      [since]
+    );
+    return Number(rows[0].count);
+  }
   async updateContainerStatus(serverId: number, status: StatusE): Promise<boolean> {
     const [result] = await pool.execute<ResultSetHeader>(
       'UPDATE game_servers SET status = ? WHERE server_id = ?',
