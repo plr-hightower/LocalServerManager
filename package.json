@@ -1,5 +1,6 @@
 {
-  "name": "server-project",
+  "name": "hightower-servers",
+  "version": "0.0.0",
   "private": true,
   "workspaces": [
     "frontend",
