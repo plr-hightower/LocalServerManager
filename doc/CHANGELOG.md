@@ -3,6 +3,20 @@
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Security
+
+## [0.1.0] 18 July 2026
+
+### Added
 - Added frontend
 - Added server schemas 
 - Added server router
