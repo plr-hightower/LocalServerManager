@@ -14,6 +14,20 @@
 
 ### Security
 
+## [0.1.1] 18 July 2026
+
+### Added
+
+### Fixed
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Security
+
 ## [0.1.0] 18 July 2026
 
 ### Added
@@ -36,6 +50,7 @@
 
 ### Fixed
 - Dockerfiles updated and docker compose aswell.
+- Stupid release name fixed.
 
 ### Changed
 - Redid the docker-compose and how everything is run 

@@ -114,7 +114,7 @@ EOF
   rm "$block"
 
   git add package.json backend/package.json frontend/package.json shared/package.json package-lock.json "$CHANGELOG"
-  git commit -m "chore(release): start v$new_version"
+  git commit -m "Release v$new_version"
   git push -u origin "$release_branch"
 
   echo ""
