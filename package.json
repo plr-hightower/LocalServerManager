@@ -1,5 +1,6 @@
 {
-  "name": "server-project",
+  "name": "hightower-servers",
+  "version": "0.1.0",
   "private": true,
   "workspaces": [
     "frontend",
@@ -20,6 +21,9 @@
     "express": "^5.2.1"
   },
   "devDependencies": {
-    "@types/dockerode": "^4.0.1"
+    "@types/dockerode": "^4.0.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.0.0",
+    "vue-tsc": "^2.0.0"
   }
 }

@@ -1,10 +1,14 @@
 import type { NextFunction, Request,Response } from "express";
 
-import { IGameService } from "../interfaces/IGameService";
-import { CreateServerRequestS, CreateServerRequestSchema, DeleteServerRequestS, DeleteServerRequestSchema, GameE, GameManifestS, ServerSettingsS, ServerSettingsSchema, StatusEnum } from '@hightower/shared';
-import { DbService } from "../repository/db.repository";
+import { IGameService } from "../interfaces/IGameService.js";
+import { CreateServerRequestS, CreateServerRequestSchema, DeleteServerRequestS, DeleteServerRequestSchema, GameE, GameManifestS, HealthCheckResponseS, HealthCheckResponseSchema, ServerActionSchema, ServerSettingsS, ServerSettingsSchema, StatusE, StatusEnum } from '@hightower/shared';
+import { DbService } from "../repository/db.repository.js";
 import { success, ZodError } from "zod";
-import { createContainer, deleteContainer } from "../services/docker.service";
+import { createContainer, deleteContainer, getDockerStats, startContainer, stopContainer } from "../services/docker.service.js";
+import { getGameService, getManifest } from "../services/game.service.js";
+import { hasEnoughRam } from "../services/serverHelper.service.js";
+import { logger } from "../logger.js";
+import { error } from "console";
 
 
 
@@ -14,8 +18,9 @@ const buildServer = async (req:Request, res:Response) => {
         const db = new DbService();
 
         const requestSettings:CreateServerRequestS = CreateServerRequestSchema.parse(req.body);
-        console.log("successfully parsed");
+        logger.info("Successfully parsed create server request.");
 
+        logger.info({params : requestSettings},`Building server with the following params`);
         const settings:ServerSettingsS =  ServerSettingsSchema.parse({
         ...requestSettings,
         core_settings: {
@@ -29,36 +34,46 @@ const buildServer = async (req:Request, res:Response) => {
         });
         // ServerID is set automatically by db
 
+        const maxTotalServers = Number(process.env.MAX_TOTAL_SERVERS ?? 40);
+        const maxServersWithinWindow = Number(process.env.MAX_SERVERS_WITHIN_WINDOW ?? 1);
+        const window = Number(process.env.CREATE_SERVER_WINDOW_MINUTES ?? 60);
+        const timeElapsedSinceBuild = new Date(Date.now() - window * 60 * 1000);
 
-
+        if (await db.countServers() >= maxTotalServers){
+            return res.status(429).json({
+                error: "Max servers limit reached."
+            });
+        }
+        if (await db.countServersSince(timeElapsedSinceBuild) >= maxServersWithinWindow) {
+            return res.status(429).json({
+                error: `Server creation limit reached: max ${maxServersWithinWindow} per ${window} minute(s).`
+            });
+        }
         if(await db.getServerByName(settings.core_settings.name) !== null){
             //Find the proper status eventually
             return res.status(400).json("Server name already exists");
         }
 
+        const currentUsedMb = await db.sumRamAllocForActiveServers();
+        if (!hasEnoughRam(settings.core_settings.ram_alloc_mb, currentUsedMb)) {
+            return res.status(400).json({ error: "Not enough RAM available to start this server." });
+        }
 
-        // Here we extract what game it is
-        const game:GameE = settings.core_settings.game_container;
+        // Setting up the settings
+        const game: GameE = settings.core_settings.game_container;
+        const gameService = await getGameService(settings);
 
-        // Here we import the game specific module from which we eventually get the game manifest
-        const module = await import(`../services/games/${game}.service`);
-
-        //Making sure that it respects the interface
-        const gameService = module.GameService as IGameService;
-
-        console.log("hoooo close gang");
-
+        // Set ports before the manifest, else will not work
+        // TODO: make the order irrelevant
         settings.core_settings.default_host_port = gameService.getDefaultPort();
         settings.core_settings.host_port = gameService.getHostPort((await db.getServersByGame(game)).length);
 
-        //Here we get the game specific env variables
-        const result: GameManifestS = await gameService.getManifest(settings);
-        // What I should do is have a func that returns the default port for that specific game to later be mapped in the docker container instantiation
+        const manifest: GameManifestS = await gameService.getGameManifest(settings);
 
 
-        settings.core_settings.container_id = await createContainer(settings,result);
-
+        settings.core_settings.container_id = await createContainer(settings,manifest);
         const insertId:number = await db.logNewServer(settings);
+
         console.log(insertId);
         res.status(200).json(insertId);
 
@@ -77,6 +92,77 @@ const buildServer = async (req:Request, res:Response) => {
     }
 } 
 
+const changeServerStatus = async (req: Request, res: Response) => {
+    try {
+        const { name, action }: { name: string, action: StatusE} = ServerActionSchema.parse(req.body);
+
+        const db: DbService = new DbService();
+        const serverSettings: ServerSettingsS | null = await db.getServerByName(name);
+
+        if (serverSettings === null) {
+            return res.status(404).json({ error: "Server not found" });
+        }
+
+        const containerId = serverSettings.core_settings.container_id;
+
+        if (action === "starting" || action === "started") {
+            const currentUsedMb = await db.sumRamAllocForActiveServers();
+            if (!hasEnoughRam(serverSettings.core_settings.ram_alloc_mb, currentUsedMb)) {
+                return res.status(400).json({ error: "Not enough RAM available to start this server." });
+            }
+
+            await startContainer(containerId);
+            await db.updateServerStatus(serverSettings.core_settings.server_id!, "started");
+        } else if (action === "stopped" || action === "stopping"){
+            await stopContainer(containerId);
+            await db.updateServerStatus(serverSettings.core_settings.server_id!, "stopped");
+        } else {
+            return res.status(400).json({ error: "Invalide action"});
+        }
+
+        return res.status(200).json({ success: true });
+
+    } catch (err: unknown) {
+        if (err instanceof ZodError) {
+            return res.status(400).json({ error: "Invalid request.", details: err.issues });
+        }
+        if (err instanceof Error) {
+            return res.status(500).json({ error: "Failed to change server status", details: err.message });
+        }
+        res.status(500).json({ error: "Unknown error" });
+    }
+}
+const getHealthCheck = async (req: Request, res: Response) => {
+    try {
+        const db: DbService = new DbService();
+
+        const [allServers, runningServers, containerStats] = await Promise.all([
+            db.getAllServers(),
+            db.getServersByStatus("started"),
+            getDockerStats(await db.getAllServers()),
+        ]);
+
+        const response: HealthCheckResponseS = HealthCheckResponseSchema.parse({
+            servers: {
+                total: allServers.length,
+                running: runningServers.length,
+                available: allServers.length - runningServers.length,
+            },
+            containers: containerStats,
+        });
+
+        return res.status(200).json(response);
+
+    } catch (err: unknown) {
+        if (err instanceof Error) {
+            return res.status(500).json({
+                error: "Failed to get health check",
+                details: err.message,
+            });
+        }
+        res.status(500).json({ error: "Unknown error" });
+    }
+}
 const deleteServer = async (req:Request, res:Response) => {
     try{
         const request: DeleteServerRequestS = DeleteServerRequestSchema.parse(req.body);
@@ -109,6 +195,7 @@ const deleteServer = async (req:Request, res:Response) => {
 
 const getServerList = async (req:Request, res:Response) => {
     try {
+        logger.info("Getting the server list.");
         const db:DbService = new DbService();
         res.status(200).json(await db.getServerList());
 
@@ -127,7 +214,9 @@ const getServerList = async (req:Request, res:Response) => {
     }
 }
 export const serverController = {
+    changeServerStatus,
     buildServer,
     deleteServer,
-    getServerList
+    getServerList,
+    getHealthCheck
 }

@@ -2,36 +2,35 @@
 FROM node:20-slim AS builder
 WORKDIR /app
 
-# Copy workspace layouts
 COPY package*.json ./
 COPY shared/package*.json ./shared/
 COPY backend/package*.json ./backend/
+COPY frontend/package*.json ./frontend/
 
-# Install ALL dependencies (including devDependencies like TypeScript)
 RUN npm install
 
-# Copy source code assets
 COPY shared/ ./shared/
 COPY backend/ ./backend/
+COPY scripts/ ./scripts/
 
-# Build your production dist targets
-WORKDIR /app/backend
-RUN npm run build
+RUN /app/node_modules/.bin/tsc --project shared/tsconfig.json
+RUN /app/node_modules/.bin/tsc --project backend/tsconfig.json
 
 # ── STAGE 2: RUNTIME ENVIRONMENT ───────────────────────────────────────
 FROM node:20-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Copy built artifacts and package structures from stage 1
 COPY package*.json ./
 COPY shared/package*.json ./shared/
 COPY backend/package*.json ./backend/
+COPY --from=builder /app/shared/dist ./shared/dist
 COPY --from=builder /app/backend/dist ./backend/dist
+COPY --from=builder /app/backend/src/db/migrations ./backend/src/db/migrations
+COPY --from=builder /app/scripts ./scripts
 
-# Install ONLY production dependencies to keep the image tiny
-RUN npm prune --production
+RUN npm install --omit=dev
 
-EXPOSE 3000
+EXPOSE 4532
 WORKDIR /app/backend
 CMD ["node", "dist/server.js"]

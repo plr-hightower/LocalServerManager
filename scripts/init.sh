@@ -1,9 +1,9 @@
-#!/bash/bin
+#!/bin/bash
 set -e
 
 # Load global configuration and environment secrets
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/scripts/config.sh"
+source "$SCRIPT_DIR/config.sh"
 
 echo "================================"
 echo "  Server Project — Init Script  "
@@ -40,6 +40,6 @@ echo "================================"
 echo "  Done — everything is running  "
 echo "================================"
 echo ""
-echo "Frontend: http://localhost:$BACKEND_PORT"
-echo "API:      http://localhost:$BACKEND_PORT/api"
+echo "Frontend: http://localhost"
+echo "API:      http://localhost/api  (backend internal port: $BACKEND_PORT)"
 echo "Database: localhost:$DB_EXPOSE_PORT"

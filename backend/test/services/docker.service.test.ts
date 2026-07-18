@@ -1,0 +1,328 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { EventEmitter } from 'node:events'
+import type { ServerSettingsS, GameManifestS } from '@hightower/shared'
+
+// hoisted so they're available inside vi.mock factories
+const mocks = vi.hoisted(() => {
+  const container = {
+    id: 'mock-container-id-abc123',
+    inspect: vi.fn(),
+    start: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn().mockResolvedValue(undefined),
+    remove: vi.fn().mockResolvedValue(undefined),
+    stats: vi.fn(),
+  }
+  const image = { inspect: vi.fn() }
+  const dockerInstance = {
+    getImage: vi.fn().mockReturnValue(image),
+    getContainer: vi.fn().mockReturnValue(container),
+    createContainer: vi.fn().mockResolvedValue(container),
+    listContainers: vi.fn().mockResolvedValue([]),
+    getEvents: vi.fn(),
+  }
+  return { container, image, dockerInstance }
+})
+
+vi.mock('dockerode', () => ({
+  default: vi.fn().mockImplementation(function () { return mocks.dockerInstance }),
+}))
+
+vi.mock('../../src/repository/db.repository.js', () => ({
+  DbService: vi.fn(),
+}))
+
+import {
+  createContainer,
+  deleteContainer,
+  startContainer,
+  stopContainer,
+  getDockerStats,
+  watchContainerEvents,
+} from '../../src/services/docker.service.js'
+import { DbService } from '../../src/repository/db.repository.js'
+
+const baseServer: ServerSettingsS = {
+  core_settings: {
+    server_id: 1,
+    name: 'test-server',
+    game_container: 'minecraft',
+    container_id: 'mock-container-id-abc123',
+    ram_alloc_mb: 4096,
+    max_num_players: 10,
+    status: 'stopped',
+    host_port: 25565,
+    default_host_port: '25565',
+    created_by: 'admin',
+    created_at: new Date('2026-01-01'),
+  },
+  game_settings: {
+    game: 'minecraft',
+    EULA: 'TRUE',
+    TYPE: 'FABRIC',
+    VERSION: '1.20.1',
+    MOTD: 'Test Server',
+    MAX_PLAYERS: 10,
+    VIEW_DISTANCE: 12,
+  },
+}
+
+const baseManifest: GameManifestS = {
+  image: 'itzg/minecraft-server:2026.7.0-java21',
+  env: ['EULA=TRUE', 'TYPE=FABRIC', 'VERSION=1.20.1'],
+  protocols: ['tcp'],
+  worldVolumes: [{ path: '/data' }],
+  extraPorts: [],
+  useHostPort: false,
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  mocks.container.inspect.mockResolvedValue({ State: { Running: false, Paused: false } })
+  mocks.container.start.mockResolvedValue(undefined)
+  mocks.container.stop.mockResolvedValue(undefined)
+  mocks.container.remove.mockResolvedValue(undefined)
+  mocks.image.inspect.mockResolvedValue({})
+  mocks.dockerInstance.getContainer.mockReturnValue(mocks.container)
+  mocks.dockerInstance.createContainer.mockResolvedValue(mocks.container)
+  mocks.dockerInstance.listContainers.mockResolvedValue([])
+})
+
+describe('createContainer', () => {
+  it('throws when default_host_port is missing', async () => {
+    const settings: ServerSettingsS = {
+      ...baseServer,
+      core_settings: { ...baseServer.core_settings, default_host_port: null },
+    }
+    await expect(createContainer(settings, baseManifest)).rejects.toThrow(
+      'core_settings default hostport not set'
+    )
+  })
+
+  it('throws when host_port is missing', async () => {
+    const settings: ServerSettingsS = {
+      ...baseServer,
+      core_settings: { ...baseServer.core_settings, host_port: null },
+    }
+    await expect(createContainer(settings, baseManifest)).rejects.toThrow(
+      'core_settings default hostport not set'
+    )
+  })
+
+  it('returns the container ID on success', async () => {
+    const id = await createContainer(baseServer, baseManifest)
+    expect(id).toBe('mock-container-id-abc123')
+  })
+
+  it('calls docker.createContainer with the server name', async () => {
+    await createContainer(baseServer, baseManifest)
+    const call = mocks.dockerInstance.createContainer.mock.calls[0][0]
+    expect(call.name).toBe('test-server')
+  })
+
+  it('sets Memory from ram_alloc_mb converted to bytes', async () => {
+    await createContainer(baseServer, baseManifest)
+    const call = mocks.dockerInstance.createContainer.mock.calls[0][0]
+    expect(call.HostConfig.Memory).toBe(4096 * 1024 * 1024)
+  })
+
+  it('calls container.start() after creating', async () => {
+    await createContainer(baseServer, baseManifest)
+    expect(mocks.container.start).toHaveBeenCalledOnce()
+  })
+
+  it('binds the correct host port', async () => {
+    await createContainer(baseServer, baseManifest)
+    const call = mocks.dockerInstance.createContainer.mock.calls[0][0]
+    const bindings = call.HostConfig.PortBindings
+    const key = '25565/tcp'
+    expect(bindings[key]).toEqual([{ HostPort: '25565' }])
+  })
+
+  it('passes env vars from the manifest', async () => {
+    await createContainer(baseServer, baseManifest)
+    const call = mocks.dockerInstance.createContainer.mock.calls[0][0]
+    expect(call.Env).toEqual(baseManifest.env)
+  })
+})
+
+describe('deleteContainer', () => {
+  it('calls container.stop() when not paused', async () => {
+    mocks.container.inspect.mockResolvedValue({ State: { Paused: false } })
+    await deleteContainer('mock-container-id-abc123')
+    expect(mocks.container.stop).toHaveBeenCalledOnce()
+  })
+
+  it('skips container.stop() when container is paused', async () => {
+    mocks.container.inspect.mockResolvedValue({ State: { Paused: true } })
+    await deleteContainer('mock-container-id-abc123')
+    expect(mocks.container.stop).not.toHaveBeenCalled()
+  })
+
+  it('always calls container.remove()', async () => {
+    await deleteContainer('mock-container-id-abc123')
+    expect(mocks.container.remove).toHaveBeenCalledOnce()
+  })
+
+  it('calls docker.getContainer with the provided ID', async () => {
+    await deleteContainer('some-id')
+    expect(mocks.dockerInstance.getContainer).toHaveBeenCalledWith('some-id')
+  })
+})
+
+describe('startContainer', () => {
+  it('starts the container when it is not running', async () => {
+    mocks.container.inspect.mockResolvedValue({ State: { Running: false } })
+    await startContainer('mock-container-id-abc123')
+    expect(mocks.container.start).toHaveBeenCalledOnce()
+  })
+
+  it('throws when the container is already running', async () => {
+    mocks.container.inspect.mockResolvedValue({ State: { Running: true } })
+    await expect(startContainer('mock-container-id-abc123')).rejects.toThrow(
+      'Container is already running'
+    )
+  })
+
+  it('does not call start() when already running', async () => {
+    mocks.container.inspect.mockResolvedValue({ State: { Running: true } })
+    await startContainer('mock-container-id-abc123').catch(() => {})
+    expect(mocks.container.start).not.toHaveBeenCalled()
+  })
+})
+
+describe('stopContainer', () => {
+  it('stops the container when it is running', async () => {
+    mocks.container.inspect.mockResolvedValue({ State: { Running: true } })
+    await stopContainer('mock-container-id-abc123')
+    expect(mocks.container.stop).toHaveBeenCalledOnce()
+  })
+
+  it('throws when the container is already stopped', async () => {
+    mocks.container.inspect.mockResolvedValue({ State: { Running: false } })
+    await expect(stopContainer('mock-container-id-abc123')).rejects.toThrow(
+      'Container is already stopped'
+    )
+  })
+
+  it('does not call stop() when already stopped', async () => {
+    mocks.container.inspect.mockResolvedValue({ State: { Running: false } })
+    await stopContainer('mock-container-id-abc123').catch(() => {})
+    expect(mocks.container.stop).not.toHaveBeenCalled()
+  })
+})
+
+describe('getDockerStats', () => {
+  it('returns an empty array when no managed containers are running', async () => {
+    mocks.dockerInstance.listContainers.mockResolvedValue([])
+    const result = await getDockerStats([baseServer])
+    expect(result).toEqual([])
+  })
+
+  it('returns stats for each matching running container', async () => {
+    mocks.dockerInstance.listContainers.mockResolvedValue([
+      { Id: 'mock-container-id-abc123', Names: ['/test-server'] },
+    ])
+    mocks.container.stats.mockResolvedValue({
+      cpu_stats: {
+        cpu_usage: { total_usage: 2000 },
+        system_cpu_usage: 10000,
+        online_cpus: 2,
+      },
+      precpu_stats: {
+        cpu_usage: { total_usage: 1000 },
+        system_cpu_usage: 8000,
+      },
+      memory_stats: {
+        usage: 512 * 1024 * 1024,
+        limit: 4096 * 1024 * 1024,
+      },
+    })
+
+    const result = await getDockerStats([baseServer])
+    expect(result).toHaveLength(1)
+    expect(result[0].containerId).toBe('mock-container-id-abc123')
+    expect(result[0].name).toBe('test-server')
+    expect(typeof result[0].cpuUsagePercent).toBe('number')
+    expect(typeof result[0].memoryUsageMb).toBe('number')
+  })
+
+  it('ignores containers not in the servers list', async () => {
+    mocks.dockerInstance.listContainers.mockResolvedValue([
+      { Id: 'unrelated-container', Names: ['/other'] },
+    ])
+    const result = await getDockerStats([baseServer])
+    expect(result).toHaveLength(0)
+  })
+
+  it('calculates memoryUsageMb correctly', async () => {
+    mocks.dockerInstance.listContainers.mockResolvedValue([
+      { Id: 'mock-container-id-abc123', Names: ['/test-server'] },
+    ])
+    const usageBytes = 256 * 1024 * 1024
+    mocks.container.stats.mockResolvedValue({
+      cpu_stats: { cpu_usage: { total_usage: 100 }, system_cpu_usage: 1000, online_cpus: 1 },
+      precpu_stats: { cpu_usage: { total_usage: 0 }, system_cpu_usage: 0 },
+      memory_stats: { usage: usageBytes, limit: 4096 * 1024 * 1024 },
+    })
+
+    const result = await getDockerStats([baseServer])
+    expect(result[0].memoryUsageMb).toBe(256)
+  })
+
+  it('returns empty array when servers list is empty', async () => {
+    const result = await getDockerStats([])
+    expect(result).toEqual([])
+  })
+})
+
+describe('watchContainerEvents', () => {
+  it('registers a data listener on the event stream', async () => {
+    const emitter = new EventEmitter()
+    mocks.dockerInstance.getEvents.mockResolvedValue(emitter)
+
+    const mockDb = { updateServerStatusByContainerId: vi.fn().mockResolvedValue(undefined) }
+    vi.mocked(DbService).mockImplementation(() => mockDb as unknown as DbService)
+
+    await watchContainerEvents(mockDb as unknown as DbService)
+    expect(emitter.listenerCount('data')).toBe(1)
+  })
+
+  it('calls updateServerStatusByContainerId with "started" on start event', async () => {
+    const emitter = new EventEmitter()
+    mocks.dockerInstance.getEvents.mockResolvedValue(emitter)
+
+    const mockDb = { updateServerStatusByContainerId: vi.fn().mockResolvedValue(undefined) }
+    await watchContainerEvents(mockDb as unknown as DbService)
+
+    emitter.emit('data', Buffer.from(JSON.stringify({ id: 'abc', status: 'start' })))
+    await new Promise(r => setImmediate(r))
+
+    expect(mockDb.updateServerStatusByContainerId).toHaveBeenCalledWith('abc', 'started')
+  })
+
+  it('calls updateServerStatusByContainerId with "stopped" on die event', async () => {
+    const emitter = new EventEmitter()
+    mocks.dockerInstance.getEvents.mockResolvedValue(emitter)
+
+    const mockDb = { updateServerStatusByContainerId: vi.fn().mockResolvedValue(undefined) }
+    await watchContainerEvents(mockDb as unknown as DbService)
+
+    emitter.emit('data', Buffer.from(JSON.stringify({ id: 'abc', status: 'die' })))
+    await new Promise(r => setImmediate(r))
+
+    expect(mockDb.updateServerStatusByContainerId).toHaveBeenCalledWith('abc', 'stopped')
+  })
+
+  it('does not call updateServerStatusByContainerId for unknown events', async () => {
+    const emitter = new EventEmitter()
+    mocks.dockerInstance.getEvents.mockResolvedValue(emitter)
+
+    const mockDb = { updateServerStatusByContainerId: vi.fn().mockResolvedValue(undefined) }
+    await watchContainerEvents(mockDb as unknown as DbService)
+
+    emitter.emit('data', Buffer.from(JSON.stringify({ id: 'abc', status: 'unknown-event' })))
+    await new Promise(r => setImmediate(r))
+
+    expect(mockDb.updateServerStatusByContainerId).not.toHaveBeenCalled()
+  })
+})

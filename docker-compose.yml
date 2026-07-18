@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
     ports:
-      - "5173:5173"
+      - "80:80"
     depends_on:
       - backend
 
@@ -18,31 +18,56 @@ services:
       - .env
     environment:
       - DB_HOST=database
+      - SEQ_URL=http://seq
     ports:
-      - "3000:3000"
+      - "4532:4532"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
     depends_on:
       database:
         condition: service_healthy
 
+  dozzle:
+    image: amir20/dozzle:latest
+    restart: unless-stopped
+    environment:
+      DOZZLE_BASE: /dozzle
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  seq:
+    image: datalust/seq:latest
+    restart: unless-stopped
+    ports:
+      - "5341:80"
+    environment:
+      ACCEPT_EULA: Y
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "True"
+    volumes:
+      - seq_data:/data
+  
   database:
     image: mysql:8
-    restart: always  
+    restart: always
     env_file: .env
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD} 
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - mysqldata:/var/lib/mysql
     ports:
       - "3306:3306"
+    volumes:
+      - mysqldata:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USER}", "-p${DB_PASSWORD}"]
+      interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
   mysqldata:
+  seq_data:
