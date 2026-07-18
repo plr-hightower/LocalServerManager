@@ -18,6 +18,7 @@
 - Added valheim manifest
 - Added dashboard for logging with dozzle and seq.
 - Added checks for number of total servers, not starting servers that don't have enough free ram.
+- Added versioning.
 
 ### Fixed
 - Dockerfiles updated and docker compose aswell.
