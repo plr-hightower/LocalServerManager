@@ -67,10 +67,12 @@ const baseServer: ServerSettingsS = {
 }
 
 const baseManifest: GameManifestS = {
-  image: 'itzg/minecraft-server:2024.1.0',
+  image: 'itzg/minecraft-server:2026.7.0-java21',
   env: ['EULA=TRUE', 'TYPE=FABRIC', 'VERSION=1.20.1'],
   protocols: ['tcp'],
   worldVolumes: [{ path: '/data' }],
+  extraPorts: [],
+  useHostPort: false,
 }
 
 beforeEach(() => {

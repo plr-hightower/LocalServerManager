@@ -250,6 +250,115 @@ describe('DbService.getServersByStatus', () => {
   })
 })
 
+describe('DbService.countServers', () => {
+  it('returns the count as a number', async () => {
+    mockExecute.mockResolvedValueOnce([[{ count: 5 }], []] as any)
+    const db = new DbService()
+    const result = await db.countServers()
+    expect(result).toBe(5)
+  })
+
+  it('coerces a string count into a number', async () => {
+    mockExecute.mockResolvedValueOnce([[{ count: '7' }], []] as any)
+    const db = new DbService()
+    const result = await db.countServers()
+    expect(result).toBe(7)
+    expect(typeof result).toBe('number')
+  })
+
+  it('returns 0 when there are no servers', async () => {
+    mockExecute.mockResolvedValueOnce([[{ count: 0 }], []] as any)
+    const db = new DbService()
+    const result = await db.countServers()
+    expect(result).toBe(0)
+  })
+
+  it('calls execute with a COUNT(*) query and no params', async () => {
+    mockExecute.mockResolvedValueOnce([[{ count: 0 }], []] as any)
+    const db = new DbService()
+    await db.countServers()
+    const sql = (mockExecute.mock.calls[0][0] as string).toUpperCase()
+    expect(sql).toContain('COUNT(*)')
+    expect(sql).toContain('FROM SERVERS')
+  })
+})
+
+describe('DbService.countServersSince', () => {
+  it('returns the count as a number', async () => {
+    mockExecute.mockResolvedValueOnce([[{ count: 3 }], []] as any)
+    const db = new DbService()
+    const result = await db.countServersSince(new Date('2026-01-01'))
+    expect(result).toBe(3)
+  })
+
+  it('coerces a string count into a number', async () => {
+    mockExecute.mockResolvedValueOnce([[{ count: '2' }], []] as any)
+    const db = new DbService()
+    const result = await db.countServersSince(new Date('2026-01-01'))
+    expect(result).toBe(2)
+  })
+
+  it('returns 0 when nothing was created since the given date', async () => {
+    mockExecute.mockResolvedValueOnce([[{ count: 0 }], []] as any)
+    const db = new DbService()
+    const result = await db.countServersSince(new Date())
+    expect(result).toBe(0)
+  })
+
+  it('queries with a created_at filter and passes the since date as a param', async () => {
+    mockExecute.mockResolvedValueOnce([[{ count: 0 }], []] as any)
+    const db = new DbService()
+    const since = new Date('2026-03-01T00:00:00Z')
+    await db.countServersSince(since)
+    expect(mockExecute).toHaveBeenCalledWith(
+      expect.stringContaining('created_at > ?'),
+      [since]
+    )
+  })
+})
+
+describe('DbService.sumRamAllocForActiveServers', () => {
+  it('returns the summed RAM as a number', async () => {
+    mockExecute.mockResolvedValueOnce([[{ total: 8192 }], []] as any)
+    const db = new DbService()
+    const result = await db.sumRamAllocForActiveServers()
+    expect(result).toBe(8192)
+  })
+
+  it('coerces a string sum into a number', async () => {
+    mockExecute.mockResolvedValueOnce([[{ total: '4096' }], []] as any)
+    const db = new DbService()
+    const result = await db.sumRamAllocForActiveServers()
+    expect(result).toBe(4096)
+  })
+
+  it('returns 0 when no servers are started/starting', async () => {
+    mockExecute.mockResolvedValueOnce([[{ total: 0 }], []] as any)
+    const db = new DbService()
+    const result = await db.sumRamAllocForActiveServers()
+    expect(result).toBe(0)
+  })
+
+  it('returns 0 rather than null when COALESCE has nothing to sum', async () => {
+    // COALESCE(SUM(...), 0) means MySQL itself returns 0, not null, for an empty set
+    mockExecute.mockResolvedValueOnce([[{ total: 0 }], []] as any)
+    const db = new DbService()
+    const result = await db.sumRamAllocForActiveServers()
+    expect(result).not.toBeNull()
+    expect(result).toBe(0)
+  })
+
+  it('queries only started/starting servers with no params', async () => {
+    mockExecute.mockResolvedValueOnce([[{ total: 0 }], []] as any)
+    const db = new DbService()
+    await db.sumRamAllocForActiveServers()
+    const sql = (mockExecute.mock.calls[0][0] as string).toUpperCase()
+    expect(sql).toContain('SUM(RAM_ALLOC_MB)')
+    expect(sql).toContain("STARTED")
+    expect(sql).toContain("STARTING")
+  })
+})
+
 describe('DbService.getServerList', () => {
   it('returns null when no servers exist', async () => {
     mockExecute.mockResolvedValueOnce([[], []] as any)

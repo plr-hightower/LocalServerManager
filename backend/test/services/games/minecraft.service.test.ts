@@ -70,7 +70,7 @@ describe('GameService (minecraft)', () => {
   describe('getGameManifest', () => {
     it('returns the correct Docker image', async () => {
       const manifest = await GameService.getGameManifest(baseServer)
-      expect(manifest.image).toBe('itzg/minecraft-server:2024.1.0')
+      expect(manifest.image).toBe('itzg/minecraft-server:2026.7.0-java21')
     })
 
     it('includes tcp in protocols', async () => {
