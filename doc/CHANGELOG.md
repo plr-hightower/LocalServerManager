@@ -36,6 +36,7 @@
 
 ### Fixed
 - Dockerfiles updated and docker compose aswell.
+- Stupid release name fixed.
 
 ### Changed
 - Redid the docker-compose and how everything is run 
