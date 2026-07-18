@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { Request, Response } from 'express'
 import type { ServerSettingsS } from '@hightower/shared'
+import os from 'os'
 
 vi.mock('../../src/repository/db.repository.js', () => ({
   DbService: vi.fn(),
@@ -54,6 +55,9 @@ function makeDbMock(overrides: Partial<InstanceType<typeof DbService>> = {}) {
     updateServerStatus: vi.fn().mockResolvedValue(undefined),
     deleteServerRow: vi.fn().mockResolvedValue(true),
     getServerList: vi.fn().mockResolvedValue([]),
+    countServers: vi.fn().mockResolvedValue(0),
+    countServersSince: vi.fn().mockResolvedValue(0),
+    sumRamAllocForActiveServers: vi.fn().mockResolvedValue(0),
   }
   const db = { ...defaults, ...overrides }
   vi.mocked(DbService).mockImplementation(function () { return db as unknown as InstanceType<typeof DbService> })
@@ -90,8 +94,27 @@ const startedServer: ServerSettingsS = {
   core_settings: { ...stoppedServer.core_settings, status: 'started' },
 }
 
+const ENV_KEYS = ['MAX_TOTAL_SERVERS', 'MAX_SERVERS_WITHIN_WINDOW', 'CREATE_SERVER_WINDOW_MINUTES', 'RAM_SAFETY_MARGIN_MB'] as const
+const originalEnv: Record<string, string | undefined> = {}
+for (const key of ENV_KEYS) originalEnv[key] = process.env[key]
+
 beforeEach(() => {
   vi.clearAllMocks()
+  // 16384 MB total; matches the default 4096MB ram_alloc_mb in validBody with plenty of room
+  vi.spyOn(os, 'totalmem').mockReturnValue(16384 * 1024 * 1024)
+  for (const key of ENV_KEYS) delete process.env[key]
+})
+
+afterEach(() => {
+  // Note: intentionally not vi.restoreAllMocks() here — that would reset the
+  // vi.fn() implementations set inside the module-level vi.mock(...) factories
+  // above (DbService, docker.service, minecraft.service) to empty stubs after
+  // the first test, breaking every test after it.
+  vi.spyOn(os, 'totalmem').mockRestore()
+  for (const key of ENV_KEYS) {
+    if (originalEnv[key] === undefined) delete process.env[key]
+    else process.env[key] = originalEnv[key]
+  }
 })
 
 // ── buildServer ───────────────────────────────────────────────────────────────
@@ -159,6 +182,106 @@ describe('buildServer', () => {
     await serverController.buildServer(req, res)
     expect(res.status).toHaveBeenCalledWith(500)
   })
+
+  // ── rate limiting ──────────────────────────────────────────────────────────
+
+  it('returns 429 when the total server count is at the default max (40)', async () => {
+    makeDbMock({ countServers: vi.fn().mockResolvedValue(40) })
+    const req = mockReq(validBody)
+    const res = mockRes()
+    await serverController.buildServer(req, res)
+    expect(res.status).toHaveBeenCalledWith(429)
+  })
+
+  it('returns 429 when the total server count is over the default max', async () => {
+    makeDbMock({ countServers: vi.fn().mockResolvedValue(41) })
+    const req = mockReq(validBody)
+    const res = mockRes()
+    await serverController.buildServer(req, res)
+    expect(res.status).toHaveBeenCalledWith(429)
+  })
+
+  it('allows creation when the total server count is one below the default max', async () => {
+    makeDbMock({ countServers: vi.fn().mockResolvedValue(39) })
+    vi.mocked(dockerService.createContainer).mockResolvedValue('new-container-id')
+    const req = mockReq(validBody)
+    const res = mockRes()
+    await serverController.buildServer(req, res)
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('respects a custom MAX_TOTAL_SERVERS override', async () => {
+    process.env.MAX_TOTAL_SERVERS = '2'
+    makeDbMock({ countServers: vi.fn().mockResolvedValue(2) })
+    const req = mockReq(validBody)
+    const res = mockRes()
+    await serverController.buildServer(req, res)
+    expect(res.status).toHaveBeenCalledWith(429)
+  })
+
+  it('returns 429 when the creation-window limit is reached (default max 1 per hour)', async () => {
+    makeDbMock({ countServersSince: vi.fn().mockResolvedValue(1) })
+    const req = mockReq(validBody)
+    const res = mockRes()
+    await serverController.buildServer(req, res)
+    expect(res.status).toHaveBeenCalledWith(429)
+  })
+
+  it('allows creation when nothing has been created within the window', async () => {
+    makeDbMock({ countServersSince: vi.fn().mockResolvedValue(0) })
+    vi.mocked(dockerService.createContainer).mockResolvedValue('new-container-id')
+    const req = mockReq(validBody)
+    const res = mockRes()
+    await serverController.buildServer(req, res)
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('respects a custom MAX_SERVERS_WITHIN_WINDOW override', async () => {
+    process.env.MAX_SERVERS_WITHIN_WINDOW = '5'
+    makeDbMock({ countServersSince: vi.fn().mockResolvedValue(4) })
+    vi.mocked(dockerService.createContainer).mockResolvedValue('new-container-id')
+    const req = mockReq(validBody)
+    const res = mockRes()
+    await serverController.buildServer(req, res)
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('passes a Date computed from CREATE_SERVER_WINDOW_MINUTES to countServersSince', async () => {
+    const db = makeDbMock()
+    const req = mockReq(validBody)
+    const res = mockRes()
+    await serverController.buildServer(req, res)
+    expect(db.countServersSince).toHaveBeenCalledWith(expect.any(Date))
+  })
+
+  // ── RAM checks ────────────────────────────────────────────────────────────
+
+  it('returns 400 when there is not enough RAM available', async () => {
+    // total is mocked to 16384MB; reserving 15000MB leaves no room for a 4096MB request
+    makeDbMock({ sumRamAllocForActiveServers: vi.fn().mockResolvedValue(15000) })
+    const req = mockReq(validBody)
+    const res = mockRes()
+    await serverController.buildServer(req, res)
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(dockerService.createContainer).not.toHaveBeenCalled()
+  })
+
+  it('allows creation when there is enough RAM available', async () => {
+    makeDbMock({ sumRamAllocForActiveServers: vi.fn().mockResolvedValue(0) })
+    vi.mocked(dockerService.createContainer).mockResolvedValue('new-container-id')
+    const req = mockReq(validBody)
+    const res = mockRes()
+    await serverController.buildServer(req, res)
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('checks RAM before creating the container', async () => {
+    makeDbMock({ sumRamAllocForActiveServers: vi.fn().mockResolvedValue(15000) })
+    const req = mockReq(validBody)
+    const res = mockRes()
+    await serverController.buildServer(req, res)
+    expect(dockerService.createContainer).not.toHaveBeenCalled()
+  })
 })
 
 // ── changeServerStatus ────────────────────────────────────────────────────────
@@ -209,6 +332,46 @@ describe('changeServerStatus', () => {
     await serverController.changeServerStatus(req, res)
 
     expect(dockerService.startContainer).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  // ── RAM checks ────────────────────────────────────────────────────────────
+
+  it('returns 400 and does not start the container when there is not enough RAM', async () => {
+    makeDbMock({
+      getServerByName: vi.fn().mockResolvedValue(stoppedServer),
+      sumRamAllocForActiveServers: vi.fn().mockResolvedValue(15000),
+    })
+    const req = mockReq({ name: 'test-server', action: 'started' })
+    const res = mockRes()
+    await serverController.changeServerStatus(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(dockerService.startContainer).not.toHaveBeenCalled()
+  })
+
+  it('starts the container when there is enough RAM', async () => {
+    makeDbMock({
+      getServerByName: vi.fn().mockResolvedValue(stoppedServer),
+      sumRamAllocForActiveServers: vi.fn().mockResolvedValue(0),
+    })
+    vi.mocked(dockerService.startContainer).mockResolvedValue(undefined)
+    const req = mockReq({ name: 'test-server', action: 'started' })
+    const res = mockRes()
+    await serverController.changeServerStatus(req, res)
+
+    expect(dockerService.startContainer).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('does not RAM-check a "stopped" action', async () => {
+    const db = makeDbMock({ getServerByName: vi.fn().mockResolvedValue(startedServer) })
+    vi.mocked(dockerService.stopContainer).mockResolvedValue(undefined)
+    const req = mockReq({ name: 'test-server', action: 'stopped' })
+    const res = mockRes()
+    await serverController.changeServerStatus(req, res)
+
+    expect(db.sumRamAllocForActiveServers).not.toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(200)
   })
 

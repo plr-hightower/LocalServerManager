@@ -17,6 +17,7 @@
 - Added different container port to app port configs for games
 - Added valheim manifest
 - Added dashboard for logging with dozzle and seq.
+- Added checks for number of total servers, not starting servers that don't have enough free ram.
 
 ### Fixed
 - Dockerfiles updated and docker compose aswell.

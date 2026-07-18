@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { nameToInt } from '../../src/services/serverHelper.service.js'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import os from 'os'
+import { nameToInt, hasEnoughRam } from '../../src/services/serverHelper.service.js'
 
 describe('nameToInt', () => {
   it('returns a number', () => {
@@ -51,5 +52,81 @@ describe('nameToInt', () => {
     const longName = 'a'.repeat(100)
     expect(() => nameToInt(longName)).not.toThrow()
     expect(nameToInt(longName)).toBeGreaterThanOrEqual(0)
+  })
+})
+
+describe('hasEnoughRam', () => {
+  const originalMargin = process.env.RAM_SAFETY_MARGIN_MB
+  // 16384 MB total, matching os.totalmem()'s byte-based return value
+  const totalMb = 16384
+
+  beforeEach(() => {
+    vi.spyOn(os, 'totalmem').mockReturnValue(totalMb * 1024 * 1024)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    if (originalMargin === undefined) {
+      delete process.env.RAM_SAFETY_MARGIN_MB
+    } else {
+      process.env.RAM_SAFETY_MARGIN_MB = originalMargin
+    }
+  })
+
+  it('returns true when there is plenty of room', () => {
+    delete process.env.RAM_SAFETY_MARGIN_MB
+    expect(hasEnoughRam(1000, 0)).toBe(true)
+  })
+
+  it('returns true right at the boundary (projected === available)', () => {
+    delete process.env.RAM_SAFETY_MARGIN_MB
+    // default margin is 512, so available = 16384 - 512 = 15872
+    expect(hasEnoughRam(15872, 0)).toBe(true)
+  })
+
+  it('returns false one MB past the boundary', () => {
+    delete process.env.RAM_SAFETY_MARGIN_MB
+    expect(hasEnoughRam(15873, 0)).toBe(false)
+  })
+
+  it('returns false when already-used RAM alone exceeds available, regardless of request size', () => {
+    delete process.env.RAM_SAFETY_MARGIN_MB
+    expect(hasEnoughRam(1, 16000)).toBe(false)
+  })
+
+  it('returns true for a zero-MB request when there is room', () => {
+    delete process.env.RAM_SAFETY_MARGIN_MB
+    expect(hasEnoughRam(0, 1000)).toBe(true)
+  })
+
+  it('returns false for a single request that alone exceeds total memory', () => {
+    delete process.env.RAM_SAFETY_MARGIN_MB
+    expect(hasEnoughRam(totalMb + 1, 0)).toBe(false)
+  })
+
+  it('uses the default 512MB safety margin when RAM_SAFETY_MARGIN_MB is unset', () => {
+    delete process.env.RAM_SAFETY_MARGIN_MB
+    // 16384 - 512 = 15872 available; requesting exactly that plus 1 should fail
+    expect(hasEnoughRam(15873, 0)).toBe(false)
+    expect(hasEnoughRam(15872, 0)).toBe(true)
+  })
+
+  it('respects a custom RAM_SAFETY_MARGIN_MB override', () => {
+    process.env.RAM_SAFETY_MARGIN_MB = '2048'
+    // available = 16384 - 2048 = 14336
+    expect(hasEnoughRam(14336, 0)).toBe(true)
+    expect(hasEnoughRam(14337, 0)).toBe(false)
+  })
+
+  it('treats a zero safety margin as no headroom reserved', () => {
+    process.env.RAM_SAFETY_MARGIN_MB = '0'
+    expect(hasEnoughRam(totalMb, 0)).toBe(true)
+    expect(hasEnoughRam(totalMb + 1, 0)).toBe(false)
+  })
+
+  it('sums requested and current usage correctly across multiple active servers', () => {
+    delete process.env.RAM_SAFETY_MARGIN_MB
+    // 4 servers already using 4096MB each = 16384 reserved, way past 15872 available
+    expect(hasEnoughRam(1024, 4096 * 4)).toBe(false)
   })
 })
