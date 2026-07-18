@@ -27,6 +27,7 @@
 - Redid the docker-compose and how everything is run 
 - Cleaned up the packages, configs and dockerfiles
 - Updated minecraft image
+- Updated versioning to match the gitflow git workflow.
 
 ### Deprecated
 
