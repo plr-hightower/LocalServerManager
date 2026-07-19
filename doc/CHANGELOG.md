@@ -14,6 +14,25 @@
 
 ### Security
 
+## [0.3.0] 19 July 2026
+
+### Added
+- Added astroneer manifest
+- Added palworld manifest
+- Added new fetch all images script.
+
+### Fixed
+- game_container is now a plain VARCHAR instead of a hardcoded SQL ENUM, so adding a new game never requires a DB migration again.
+- fetch_all_images.sh no longer aborts the whole run when a service file's image can't be parsed, it now correctly skips just that one game.
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Security
+
 ## [0.2.1] 18 July 2026
 
 ### Added

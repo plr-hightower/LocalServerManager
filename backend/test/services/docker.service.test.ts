@@ -71,6 +71,7 @@ const baseManifest: GameManifestS = {
   env: ['EULA=TRUE', 'TYPE=FABRIC', 'VERSION=1.20.1'],
   protocols: ['tcp'],
   worldVolumes: [{ path: '/data' }],
+  supportVolumes: [],
   extraPorts: [],
   useHostPort: false,
 }

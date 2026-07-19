@@ -53,7 +53,7 @@ async function createContainer(settings: ServerSettingsS, manifest: GameManifest
         ExposedPorts,
         HostConfig: {
             PortBindings,
-            Binds: manifest.worldVolumes.map(v => toBind(settings.core_settings.name, v)),
+            Binds: [...manifest.worldVolumes, ...manifest.supportVolumes].map(v => toBind(settings.core_settings.name, v)),
             RestartPolicy: { Name: 'unless-stopped' },
             Memory: settings.core_settings.ram_alloc_mb * 1024 * 1024,
         }
