@@ -5,6 +5,8 @@
 ### Added
 - Added astroneer manifest
 - Added palworld manifest
+- Added new fetch all images script.
+
 ### Fixed
 
 ### Changed
