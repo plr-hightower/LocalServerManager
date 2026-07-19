@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Added a custom Astroneer image (docker/astroneer-server/) built on top of barumel/docker-astroneer-server.
 
 ### Fixed
 
