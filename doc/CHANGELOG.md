@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Download world files added
 
 ### Fixed
 
