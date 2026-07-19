@@ -7,7 +7,7 @@
 
         <div class="server-card">
             <div class="server-card__body">
-                <ServerControls :server="server" />
+                <ServerControls :server="server" show-download />
                 <ServerStats :stats="stats" />
 
                 <div class="server-card__meta">

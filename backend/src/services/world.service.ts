@@ -47,7 +47,7 @@ export async function streamWorldDownload(server: ServerSettingsS, res: Response
 
     archive.on('error', (err: Error) => {
         if (!res.headersSent) {
-            res.status(500).json({ error: 'Failed to create archive', details: err.message });
+            res.status(500).contentType('application/json').json({ error: 'Failed to create archive', details: err.message });
         } else {
             res.destroy();
         }

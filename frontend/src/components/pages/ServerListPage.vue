@@ -16,7 +16,6 @@
                 v-for="server in serverStore.visibleServers"
                 :key="server.core_settings.server_id"
                 :server="server"
-                @delete="serverStore.dismiss"
                 @open="goToDetail"
             />
         </div>

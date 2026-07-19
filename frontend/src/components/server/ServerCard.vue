@@ -30,7 +30,6 @@
             <div class="server-card__actions">
                 <ServerControls :server="server" />
                 <button class="btn btn--ghost btn--sm" @click="emit('open', server)">Details</button>
-                <button class="btn btn--ghost btn--sm" @click="emit('delete', server)">Delete</button>
             </div>
         </div>
     </div>
@@ -47,7 +46,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     open: [server: ServerSettingsS],
-    delete: [server: ServerSettingsS],
 }>();
 
 const isRunning = computed(() => ['started', 'starting'].includes(props.server.core_settings.status));
