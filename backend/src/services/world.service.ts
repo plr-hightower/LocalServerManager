@@ -43,7 +43,10 @@ export async function streamWorldDownload(server: ServerSettingsS, res: Response
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${server.core_settings.name}_world.zip"`);
 
-    const archive = archiver('zip', { zlib: { level: 9 } });
+    // Level 9 (max compression) is CPU-heavy enough to stall Node's single event
+    // loop on large worlds, blocking every other in-flight request. Level 1 still
+    // shrinks the archive meaningfully at a fraction of the CPU cost.
+    const archive = archiver('zip', { zlib: { level: 1 } });
 
     archive.on('error', (err: Error) => {
         if (!res.headersSent) {
