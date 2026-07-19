@@ -14,6 +14,20 @@
 
 ### Security
 
+## [0.2.1] 18 July 2026
+
+### Added
+
+### Fixed
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Security
+
 ## [0.2.0] 18 July 2026
 
 ### Added
