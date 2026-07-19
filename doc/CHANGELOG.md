@@ -3,6 +3,20 @@
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Security
+
+## [0.3.0] 19 July 2026
+
+### Added
 - Added astroneer manifest
 - Added palworld manifest
 - Added new fetch all images script.
