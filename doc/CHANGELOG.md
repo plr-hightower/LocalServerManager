@@ -14,6 +14,21 @@
 
 ### Security
 
+## [0.3.1] 19 July 2026
+
+### Added
+- Added a custom Astroneer image (docker/astroneer-server/) built on top of barumel/docker-astroneer-server.
+
+### Fixed
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Security
+
 ## [0.3.0] 19 July 2026
 
 ### Added
