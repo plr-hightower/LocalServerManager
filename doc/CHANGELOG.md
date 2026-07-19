@@ -3,7 +3,8 @@
 ## [Unreleased]
 
 ### Added
-
+- Added astroneer manifest
+- Added palworld manifest
 ### Fixed
 
 ### Changed
