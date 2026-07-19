@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-export const GameEnum = z.enum(["minecraft","valheim","astroneer","palworld"]);
+export const GameEnum = z.enum(["minecraft","valheim","palworld"]);
 export const RamAllocMbEnum = z.literal([ 1024, 2048, 4096, 8192]);
 export const StatusEnum = z.enum(["started","starting","stopped","stopping","error"]);
 
@@ -41,14 +41,6 @@ export const ValheimSettingsSchema = z.object({
     SERVER_PASS: z.string().min(5, "Password must be at least 5 characters."),
 });
 
-export const AstroneerSettingsSchema = z.object({
-    game: z.literal("astroneer"),
-    OWNER_NAME: z.string().min(1, "Steam username of the server owner is required."),
-    PASSWORD: z.string().min(1, "Password is required."),
-    AUTO_SAVE_INTERVAL: z.number().int().min(1).default(60),
-    DISABLE_ENCRYPTION: z.boolean().default(false),
-});
-
 export const PalworldSettingsSchema = z.object({
     game: z.literal("palworld"),
     SERVER_PASSWORD: z.string().min(1, "Server password is required."),
@@ -59,7 +51,6 @@ export const PalworldSettingsSchema = z.object({
 export const GameSettingsSchema = z.discriminatedUnion("game",[
     MinecraftSettingsSchema,
     ValheimSettingsSchema,
-    AstroneerSettingsSchema,
     PalworldSettingsSchema,
 ]);
 
@@ -100,5 +91,4 @@ export type ServerSettingsS = z.infer<typeof ServerSettingsSchema>;
 export type ServerActionS = z.infer<typeof ServerActionSchema>;
 export type ValheimSettingsS = z.infer<typeof ValheimSettingsSchema>;
 export type MinecraftSettingsS = z.infer<typeof MinecraftSettingsSchema>;
-export type AstroneerSettingsS = z.infer<typeof AstroneerSettingsSchema>;
 export type PalworldSettingsS = z.infer<typeof PalworldSettingsSchema>;
