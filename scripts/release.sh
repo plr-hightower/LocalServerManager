@@ -99,12 +99,6 @@ cmd_start() {
 
 ### Changed
 
-### Deprecated
-
-### Removed
-
-### Security
-
 ## [$new_version] $today
 EOF
   sed -i "/^## \[Unreleased\]\$/{
