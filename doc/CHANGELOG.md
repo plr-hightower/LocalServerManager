@@ -3,6 +3,20 @@
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Security
+
+## [0.2.0] 18 July 2026
+
+### Added
 - Download world files added
 
 ### Fixed
