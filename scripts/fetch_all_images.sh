@@ -11,7 +11,7 @@
 # list to update here.
 #
 # A game with its own docker/<name>/Dockerfile (e.g. a locally-patched fork
-# of an upstream image) is built instead of pulled — see docker/astroneer-server/
+# of an upstream image) is built instead of pulled — see docker/astroneer/
 # for an example.
 #
 # Usage:

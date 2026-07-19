@@ -5,7 +5,7 @@
 ### Added
 
 ### Fixed
-
+- fixed the docker compose not referencing proper file.
 ### Changed
 
 ### Deprecated
