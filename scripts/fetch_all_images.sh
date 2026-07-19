@@ -11,8 +11,7 @@
 # list to update here.
 #
 # A game with its own docker/<name>/Dockerfile (e.g. a locally-patched fork
-# of an upstream image) is built instead of pulled — see docker/astroneer/
-# for an example.
+# of an upstream image) is built instead of pulled.
 #
 # Usage:
 #   ./scripts/fetch_all_images.sh
@@ -26,8 +25,7 @@ GAMES_DIR="$PROJECT_ROOT/backend/src/services/games"
 mkdir -p "$IMAGES_DIR"
 
 # Tracks which image reference was pulled for each game last time, so a game
-# switching to a different image (e.g. astroneer moving off
-# barumel/docker-astroneer-server) gets its old, now-unused image removed
+# switching to a different image gets its old, now-unused image removed
 # instead of silently left behind taking up disk space.
 IMAGE_REFS_FILE="$IMAGES_DIR/.image-refs"
 touch "$IMAGE_REFS_FILE"
