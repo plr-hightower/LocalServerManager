@@ -8,6 +8,14 @@
 
 ### Changed
 
+## [0.4.2] 19 July 2026
+
+### Added
+
+### Fixed
+- Trying to hot fix astroneer.
+### Changed
+
 ## [0.4.1] 19 July 2026
 
 ### Added

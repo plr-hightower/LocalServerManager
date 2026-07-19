@@ -35,7 +35,11 @@ if [ ! -f /astroneer/initialized ]; then
   echo "Server seems to run the first time!"
   echo "Start the server once to make sure all config files were created..."
 
-  /geproton/proton run /astroneer/Astro/Binaries/Win64/AstroServer-Win64-Shipping.exe
+  # SteamGameId is required for Proton to actually write a log file at all —
+  # its setup_logging() silently no-ops without it (see proton-ge-custom
+  # source), since this entrypoint calls `proton run` directly instead of
+  # going through Steam's client runtime, which normally sets it.
+  SteamGameId=728470 PROTON_LOG=1 PROTON_LOG_DIR=/astroneer /geproton/proton run /astroneer/Astro/Binaries/Win64/AstroServer-Win64-Shipping.exe
   touch /astroneer/initialized
   mkdir -p /astroneer/Astro/Saved/SaveGames
 
@@ -65,7 +69,7 @@ node /srv/src/initConfig.js
 # Fix: whichever of the two exits first, kill the other one unconditionally,
 # reap both, and let the script actually finish — so the container exits and
 # `unless-stopped` can restart it cleanly.
-/geproton/proton run /astroneer/Astro/Binaries/Win64/AstroServer-Win64-Shipping.exe & p1=$!
+SteamGameId=728470 PROTON_LOG=1 PROTON_LOG_DIR=/astroneer /geproton/proton run /astroneer/Astro/Binaries/Win64/AstroServer-Win64-Shipping.exe & p1=$!
 node /srv/src/initBackupAndHealtCheck.js & p2=$!
 
 wait -n
