@@ -8,6 +8,17 @@
 
 ### Changed
 
+## [0.4.3] 19 July 2026
+
+### Added
+
+### Fixed
+
+### Changed
+
+### Removed
+- Removed Astroneer support.
+
 ## [0.4.2] 19 July 2026
 
 ### Added
