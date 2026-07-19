@@ -24,8 +24,8 @@ function mockRes(): Response {
   } as unknown as Response
 }
 
-function mockReq(body: Record<string, unknown> = {}): Request {
-  return { body } as Request
+function mockReq(query: Record<string, unknown> = {}): Request {
+  return { query } as Request
 }
 
 const stoppedServer: ServerSettingsS = {
@@ -63,14 +63,14 @@ beforeEach(() => {
 })
 
 describe('downloadWorld', () => {
-  it('returns 400 when request body is invalid', async () => {
+  it('returns 400 when query is invalid', async () => {
     const req = mockReq({ bad: 'data' })
     const res = mockRes()
     await worldController.downloadWorld(req, res)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
-  it('returns 400 with error detail when body is empty', async () => {
+  it('returns 400 with error detail when query is empty', async () => {
     const req = mockReq({})
     const res = mockRes()
     await worldController.downloadWorld(req, res)

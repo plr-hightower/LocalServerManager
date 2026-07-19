@@ -20,6 +20,7 @@
 - Download world files added
 
 ### Fixed
+- Changed the download of world files to a get for proper browser handeling.
 
 ### Changed
 

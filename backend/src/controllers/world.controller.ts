@@ -13,7 +13,7 @@ const db = new DbService();
 /// </summary>
 const downloadWorld = async (req: Request, res: Response) => {
     try {
-        const { name , created_by}: WorldRequestS = WorldRequestSchema.parse(req.body);
+        const { name , created_by}: WorldRequestS = WorldRequestSchema.parse(req.query);
 
         console.log('[downloadWorld] looking up server:', JSON.stringify(name));
         const server = await db.getServerByName(name);
@@ -30,7 +30,7 @@ const downloadWorld = async (req: Request, res: Response) => {
 
     } catch (err: unknown) {
         if (err instanceof ZodError) {
-            return res.status(400).json(({ error: "Invalid request body", details: err.issues.toString() }));
+            return res.status(400).json(({ error: "Invalid request", details: err.issues.toString() }));
         }
         if (err instanceof Error) {
             return res.status(500).json(({ error: "Failed to download world", details: err.message }));

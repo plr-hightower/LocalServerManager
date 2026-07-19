@@ -12,3 +12,15 @@ export function validate (schema: ZodType): (req:Request, res: Response, next:Ne
         next();
     };
 }
+
+export function validateQuery (schema: ZodType): (req:Request, res: Response, next:NextFunction) => void {
+    return (req, res, next) => {
+        const result = schema.safeParse(req.query);
+        if(!result.success){
+            res.status(400).json({error: "Invalide query", details: result.error.issues})
+            return;
+        }
+        req.query = result.data as any;
+        next();
+    };
+}
