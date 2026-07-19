@@ -23,7 +23,10 @@ mkdir -p "$IMAGES_DIR"
 
 for service_file in "$GAMES_DIR"/*.service.ts; do
   name="$(basename "$service_file" .service.ts)"
-  image="$(grep -oP "image:\s*'\K[^']+" "$service_file" | head -n1)"
+  # `|| true` matters here: under pipefail, a no-match from grep (exit 1)
+  # would otherwise propagate through the pipeline and trip `set -e`,
+  # killing the whole script before the empty-check below ever runs.
+  image="$(grep -oP "image:\s*'\K[^']+" "$service_file" | head -n1 || true)"
 
   if [ -z "$image" ]; then
     echo "⚠️  No image found in $service_file — skipping"
