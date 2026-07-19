@@ -8,6 +8,15 @@
 
 ### Changed
 
+## [0.4.1] 19 July 2026
+
+### Added
+
+### Fixed
+- was not root in the new image for astroneer
+
+### Changed
+
 ## [0.4.0] 19 July 2026
 
 ### Added
