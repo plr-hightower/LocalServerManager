@@ -24,7 +24,7 @@ export const GameService: IGameService = {
 
         const rawManifest = {
             // Custom-built on top of barumel/docker-astroneer-server — see
-            // docker/astroneer-server/ for the entrypoint.sh fix and why.
+            // docker/astroneer/ for the entrypoint.sh fix and why.
             image: 'hightower/astroneer-server:latest',
             env,
             protocols: ['tcp', 'udp'],

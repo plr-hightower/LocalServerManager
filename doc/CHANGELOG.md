@@ -8,6 +8,14 @@
 
 ### Changed
 
+## [0.4.0] 19 July 2026
+
+### Added
+
+### Fixed
+- fixed the docker compose not referencing proper file.
+### Changed
+
 ### Deprecated
 
 ### Removed
