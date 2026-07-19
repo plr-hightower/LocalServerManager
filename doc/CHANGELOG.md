@@ -5,6 +5,7 @@
 ### Added
 
 ### Fixed
+- was not root in the new image for astroneer
 
 ### Changed
 
