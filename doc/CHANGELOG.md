@@ -3,6 +3,14 @@
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Changed
+
+## [0.4.4] 20 July 2026
+
+### Added
 - Added more settings for palworld.
 ### Fixed
 
