@@ -4,27 +4,28 @@ import { GameManifestS, GameManifestSchema, ServerSettingsS, PalworldSettingsS }
 export const GameService: IGameService = {
 
     getGameManifest: async (settings: ServerSettingsS): Promise<GameManifestS> => {
-        const gs = settings.game_settings as PalworldSettingsS;
+        const { game, ...gameFields } = settings.game_settings as PalworldSettingsS;
+
+        // Field names in PalworldSettingsSchema map 1:1 to their env var names,
+        // so this is built programmatically instead of one line per setting.
+        const env = [
+            `PUID=1000`,
+            `PGID=1000`,
+            `PORT=${settings.core_settings.host_port}`,
+            `PLAYERS=${settings.core_settings.max_num_players}`,
+            `SERVER_NAME=${settings.core_settings.name}`,
+            `MULTITHREADING=true`,
+            `REST_API_ENABLED=false`,
+            `COMMUNITY=false`,
+            `TZ=UTC`,
+            ...Object.entries(gameFields)
+                .filter(([, value]) => value !== undefined)
+                .map(([key, value]) => `${key}=${value}`),
+        ];
 
         const rawManifest = {
             image: 'thijsvanloef/palworld-server-docker:latest',
-            env: [
-                `PUID=1000`,
-                `PGID=1000`,
-                `PORT=${settings.core_settings.host_port}`,
-                `PLAYERS=${settings.core_settings.max_num_players}`,
-                `SERVER_NAME=${settings.core_settings.name}`,
-                `SERVER_PASSWORD=${gs.SERVER_PASSWORD}`,
-                `ADMIN_PASSWORD=${gs.ADMIN_PASSWORD}`,
-                `MULTITHREADING=true`,
-                // Query-port server-browser listing and the REST admin API are both
-                // skipped for now (see conversation) — direct-connect play doesn't
-                // need either, and adding them requires a per-port protocol/fixed-vs-
-                // relative port model this app doesn't have yet.
-                `REST_API_ENABLED=false`,
-                `COMMUNITY=false`,
-                `TZ=UTC`,
-            ],
+            env,
             protocols: ['udp'],
             worldVolumes: [
                 { path: '/palworld' },
