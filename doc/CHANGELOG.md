@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Added
-
+- Added more settings for palworld.
 ### Fixed
 
 ### Changed
