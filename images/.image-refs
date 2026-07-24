@@ -1,0 +1,4 @@
+ark=thmhoag/arkserver:latest
+minecraft=itzg/minecraft-server:2026.7.0-java21
+palworld=thijsvanloef/palworld-server-docker:latest
+valheim=lloesche/valheim-server

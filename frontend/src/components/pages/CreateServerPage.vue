@@ -47,10 +47,10 @@
                 </div>
 
                 <div class="server-card__actions">
-                    <!-- <button type="submit" class="btn btn--primary" :disabled="submitting">
+                    <button type="submit" class="btn btn--primary" :disabled="submitting">
                         {{ submitting ? 'Creating…' : 'Create' }}
                     </button>
-                    <button type="button" class="btn btn--ghost" @click="router.push('/serverList')">Cancel</button> -->
+                    <button type="button" class="btn btn--ghost" @click="router.push('/serverList')">Cancel</button>
                     Create Server Is Disabled
                 </div>
                 <p v-if="error" class="field-error">{{ error }}</p>

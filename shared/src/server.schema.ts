@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-export const GameEnum = z.enum(["minecraft","valheim","palworld"]);
+export const GameEnum = z.enum(["minecraft","valheim","palworld","ark"]);
 export const RamAllocMbEnum = z.literal([ 1024, 2048, 4096, 8192]);
 export const StatusEnum = z.enum(["started","starting","stopped","stopping","error"]);
 
@@ -154,11 +154,70 @@ export const PalworldSettingsSchema = z.object({
     BUILDING_NAME_DISPLAY_CACHE_TTL_SECONDS: z.number().default(60),
 });
 
+export const ArkSettingsSchema = z.object({
+    game: z.literal("ark"),
+
+    SERVER_PASSWORD: z.string().optional(),
+    ADMIN_PASSWORD: z.string().min(1, "Admin password is required."),
+
+    SERVER_MAP: z.enum([
+        "TheIsland",
+        "ScorchedEarth_P",
+        "Aberration_P",
+        "Extinction",
+        "Ragnarok",
+        "Valguero_P",
+        "CrystalIsles",
+        "LostIsland",
+        "Fjordur",
+    ]).default("TheIsland"),
+
+    // Gameplay multipliers ([ServerSettings], applied via am_arkopt_* launch params).
+    // 1.0 = official rates. Field names must match ARK's exact param names.
+    XPMultiplier: z.number().min(0).default(1.0),
+    TamingSpeedMultiplier: z.number().min(0).default(1.0),
+    HarvestAmountMultiplier: z.number().min(0).default(1.0),
+    HarvestHealthMultiplier: z.number().min(0).default(1.0),
+    ResourcesRespawnPeriodMultiplier: z.number().min(0).default(1.0),
+
+    // Difficulty. OverrideOfficialDifficulty 5.0 => wild dino max level ~150.
+    DifficultyOffset: z.number().min(0).max(1).default(1.0),
+    OverrideOfficialDifficulty: z.number().min(1).default(5.0),
+
+    // Day/night cycle speeds.
+    DayCycleSpeedScale: z.number().min(0).default(1.0),
+    DayTimeSpeedScale: z.number().min(0).default(1.0),
+    NightTimeSpeedScale: z.number().min(0).default(1.0),
+
+    // Player/dino survival drain & recovery.
+    PlayerCharacterFoodDrainMultiplier: z.number().min(0).default(1.0),
+    PlayerCharacterWaterDrainMultiplier: z.number().min(0).default(1.0),
+    PlayerCharacterStaminaDrainMultiplier: z.number().min(0).default(1.0),
+    PlayerCharacterHealthRecoveryMultiplier: z.number().min(0).default(1.0),
+    DinoCharacterFoodDrainMultiplier: z.number().min(0).default(1.0),
+    DinoCountMultiplier: z.number().min(0).default(1.0),
+
+    // Combat & structures.
+    PlayerDamageMultiplier: z.number().min(0).default(1.0),
+    DinoDamageMultiplier: z.number().min(0).default(1.0),
+    StructureDamageMultiplier: z.number().min(0).default(1.0),
+    StructureResistanceMultiplier: z.number().min(0).default(1.0),
+
+    // Mode toggles.
+    ServerPVE: z.boolean().default(false),
+    ServerHardcore: z.boolean().default(false),
+    AllowThirdPersonPlayer: z.boolean().default(true),
+    ShowMapPlayerLocation: z.boolean().default(true),
+    AllowFlyerCarryPvE: z.boolean().default(false),
+    EnablePVPGamma: z.boolean().default(false),
+});
+
 // all possible settings depending on the game
 export const GameSettingsSchema = z.discriminatedUnion("game",[
     MinecraftSettingsSchema,
     ValheimSettingsSchema,
     PalworldSettingsSchema,
+    ArkSettingsSchema,
 ]);
 
 // Since we don't want the user to play with certain values, we ommit them
@@ -175,7 +234,6 @@ export const CreateServerRequestSchema = z.object({
 });
 
 export const DeleteServerRequestSchema = CoreServerSettingsSchema.pick({name: true, created_by: true});
-
 
 export const ServerActionSchema = z.object({
     name: z.string(),
@@ -199,3 +257,4 @@ export type ServerActionS = z.infer<typeof ServerActionSchema>;
 export type ValheimSettingsS = z.infer<typeof ValheimSettingsSchema>;
 export type MinecraftSettingsS = z.infer<typeof MinecraftSettingsSchema>;
 export type PalworldSettingsS = z.infer<typeof PalworldSettingsSchema>;
+export type ArkSettingsS = z.infer<typeof ArkSettingsSchema>;

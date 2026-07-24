@@ -14,7 +14,7 @@ export const VolumeMountSchema = z.object({
 
 export const GameManifestSchema = z.object({
     image: z.string().min(1),
-    env: z.array(z.string().regex(/^[A-Z0-9_]+=.+$/)), // Validates "KEY=VALUE" format
+    env: z.array(z.string().regex(/^[A-Za-z0-9_]+=.+$/)), // Validates "KEY=VALUE" format (keys may be mixed-case, e.g. arkmanager's am_* vars)
     protocols: z.array(z.enum(["tcp", "udp"])).default(["tcp"]),
     worldVolumes: z.array(VolumeMountSchema),
     // Mounted like worldVolumes, but NOT included in the world-download zip
@@ -24,6 +24,22 @@ export const GameManifestSchema = z.object({
     // Steam hosted games need to have this true since steam gets the port in the container
     // hence we gotta map that shit to itself inside aswell
     useHostPort: z.boolean().default(false),
+    // Container user (dockerode Config.User), e.g. "0" to run as root. Omit to
+    // use the image's default user.
+    user: z.string().optional(),
+    // "uid:gid" to chown the mounted volumes to before the container starts.
+    // Fresh Docker named volumes are root-owned; images that run as a non-root
+    // user (e.g. arkmanager's steam uid) can't fix this themselves, so we
+    // pre-chown as root using the image itself. Omit to skip.
+    chownVolumesTo: z.string().regex(/^\d+:\d+$/).optional(),
+    // Allocate a pseudo-TTY and keep stdin open (docker -t -i). Some images
+    // (e.g. arkmanager) exit / restart-loop without it. Omit for false.
+    tty: z.boolean().optional(),
+    // Docker network mode (HostConfig.NetworkMode), e.g. "host". Host mode binds
+    // the container's ports directly on the host with no NAT — required on Linux
+    // for all-UDP games (ARK) whose Steam query/game traffic breaks under bridge
+    // NAT. Ignored/unsupported by Docker Desktop on Windows/Mac. Omit for bridge.
+    networkMode: z.string().optional(),
 });
 
 export const ContainerStatSchema = z.object({

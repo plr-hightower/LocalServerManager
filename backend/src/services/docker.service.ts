@@ -46,14 +46,41 @@ async function createContainer(settings: ServerSettingsS, manifest: GameManifest
         }
     }
 
+    const mounts = [...manifest.worldVolumes, ...manifest.supportVolumes];
+    const binds = mounts.map(v => toBind(settings.core_settings.name, v));
+
+    // Fresh Docker named volumes are root-owned. Images that run as a non-root
+    // user can't chown them, and sudo-based entrypoint fixups fail on the
+    // root-owned mount. When the manifest asks for it, pre-chown the mounted
+    // paths as root — using the game image itself (chown override) so no extra
+    // image is needed — before the server container starts.
+    if (manifest.chownVolumesTo) {
+        const helper = await docker.createContainer({
+            Image: manifest.image,
+            User: '0',
+            Entrypoint: ['chown', '-R', manifest.chownVolumesTo, ...mounts.map(v => v.path)],
+            Cmd: [],
+            HostConfig: { Binds: binds, AutoRemove: true },
+        });
+        await helper.start();
+        const result = await helper.wait();
+        if (result.StatusCode !== 0) {
+            throw new Error(`Failed to chown volumes to ${manifest.chownVolumesTo} (exit ${result.StatusCode})`);
+        }
+    }
+
     const container = await docker.createContainer({
         Image: manifest.image,
         name: settings.core_settings.name,
+        User: manifest.user,
+        Tty: manifest.tty,
+        OpenStdin: manifest.tty,
         Env: manifest.env,
         ExposedPorts,
         HostConfig: {
             PortBindings,
-            Binds: [...manifest.worldVolumes, ...manifest.supportVolumes].map(v => toBind(settings.core_settings.name, v)),
+            Binds: binds,
+            NetworkMode: manifest.networkMode,
             RestartPolicy: { Name: 'unless-stopped' },
             Memory: settings.core_settings.ram_alloc_mb * 1024 * 1024,
         }
