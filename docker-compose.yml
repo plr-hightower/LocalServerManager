@@ -18,12 +18,12 @@ services:
       - .env
     environment:
       - DB_HOST=database
-      - SEQ_URL=http://seq
     ports:
       - "4532:4532"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/volumes:/var/lib/docker/volumes
+      - backend_logs:/app/backend/logs
     depends_on:
       database:
         condition: service_healthy
@@ -38,17 +38,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
-  seq:
-    image: datalust/seq:latest
-    restart: unless-stopped
-    ports:
-      - "5341:80"
-    environment:
-      ACCEPT_EULA: Y
-      SEQ_FIRSTRUN_NOAUTHENTICATION: "True"
-    volumes:
-      - seq_data:/data
-  
   database:
     image: mysql:8
     restart: always
@@ -70,4 +59,4 @@ services:
 
 volumes:
   mysqldata:
-  seq_data:
+  backend_logs:

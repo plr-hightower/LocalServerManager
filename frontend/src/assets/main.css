@@ -356,11 +356,42 @@ code,
 }
 
 /* Forms */
+.form-section + .form-section {
+  margin-top: var(--gap-lg);
+  padding-top: var(--gap-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.form-section__title {
+  margin-bottom: var(--gap-md);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--gap-md) var(--gap-lg);
+}
+
 .form-field {
   display: flex;
   flex-direction: column;
   gap: var(--gap-xs);
   margin-bottom: var(--gap-md);
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  cursor: pointer;
+  align-self: end;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
 }
 
 .label {

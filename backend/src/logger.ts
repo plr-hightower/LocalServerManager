@@ -1,9 +1,15 @@
 import pino from 'pino'
-import { createStream } from 'pino-seq'
+// @ts-expect-error pino-roll ships no type declarations
+import build from 'pino-roll'
+import path from 'path'
 
-const seqStream = createStream({
-    serverUrl: process.env.SEQ_URL ?? 'http://seq',
-    onError:   (err) => process.stderr.write(`pino-seq error: ${err}\n`),
+const fileStream = await build({
+    file:       path.join('logs', 'backend'),
+    frequency:  'daily',
+    dateFormat: 'yyyy-MM-dd',
+    extension:  '.log',
+    mkdir:      true,
+    limit:      { count: 13 }, // 13 rotated + 1 active file = 14 days retained
 })
 
 export const logger = pino(
@@ -13,10 +19,10 @@ export const logger = pino(
     },
     pino.multistream([
         { stream: process.stdout, level: 'debug' },
-        { stream: seqStream,      level: 'info'  },
+        { stream: fileStream,     level: 'info'  },
     ])
 )
 
 export async function closeLogger(): Promise<void> {
-    await seqStream.flush()
+    await fileStream.flush()
 }
