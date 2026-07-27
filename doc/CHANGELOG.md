@@ -3,10 +3,14 @@
 ## [Unreleased]
 
 ### Added
+- Now true or false are checkboxes.
 
 ### Fixed
 
 ### Changed
+
+### Removed
+- Removed seq.
 
 ## [0.4.4] 20 July 2026
 
