@@ -13,7 +13,7 @@ const SCHEMAS: Record<string, z.ZodType> = Object.fromEntries(
 );
 export interface FormField {
     key: string;
-    type: 'text' | 'number' | 'select' | 'fixed';
+    type: 'text' | 'number' | 'boolean' | 'select' | 'fixed';
     default: unknown;
     options?: string[]; // for selects
     min?: number;
@@ -42,6 +42,8 @@ export function useServerForm(
                     (p.enum) type = 'select';
                 else if
                     (p.type === 'integer' || p.type === 'number') type = 'number';
+                else if
+                    (p.type === 'boolean') type = 'boolean';
 
                 return {
                     key, type,
@@ -63,5 +65,15 @@ export function useServerForm(
         model.value = next;
     }, { immediate: true });
 
-    return { fields, model, readonly: !!opts.readonly };
+    // reverts model[key] back to its schema default if the current value doesn't validate
+    function validateField(key: string) {
+        const schema = SCHEMAS[toValue(game)] as z.ZodObject<z.ZodRawShape> | undefined;
+        const fieldSchema = schema?.shape[key] as unknown as z.ZodType | undefined;
+        if (!fieldSchema) return;
+        if (!fieldSchema.safeParse(model.value[key]).success) {
+            model.value[key] = fields.value.find(f => f.key === key)?.default;
+        }
+    }
+
+    return { fields, model, readonly: !!opts.readonly, validateField };
 }
