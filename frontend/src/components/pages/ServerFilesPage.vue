@@ -83,7 +83,19 @@
                     <div v-if="!fm.atRoot.value" class="form-section">
                         <h2 class="form-section__title">Upload to /{{ fm.cwd.value }}</h2>
                         <div class="server-card__actions">
-                            <input ref="fileInput" class="input" type="file" multiple :disabled="!canModify" />
+                            <select class="input" v-model="uploadMode" :disabled="!canModify">
+                                <option value="files">Files</option>
+                                <option value="folder">Folder</option>
+                            </select>
+                            <input
+                                ref="fileInput"
+                                :key="uploadMode"
+                                class="input"
+                                type="file"
+                                multiple
+                                :webkitdirectory="uploadMode === 'folder'"
+                                :disabled="!canModify"
+                            />
                             <button
                                 class="btn btn--primary btn--sm"
                                 :disabled="!canModify || fm.loading.value"
@@ -119,6 +131,7 @@ const canModify = computed(() => server.value?.core_settings.status === 'stopped
 const fm = useFileManager(() => server.value!);
 
 const fileInput = ref<HTMLInputElement | null>(null);
+const uploadMode = ref<'files' | 'folder'>('files');
 
 function volIndexOf(name: string): number {
     return Number(/^vol(\d+)$/.exec(name)?.[1] ?? 0);

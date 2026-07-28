@@ -1,8 +1,15 @@
 import { fileURLToPath, URL } from 'node:url'
+import { createRequire } from 'node:module'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
+// Bumped by scripts/release.sh, which also cuts the matching vX.Y.Z tag.
+const { version } = createRequire(import.meta.url)('./package.json')
+
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
+  },
   plugins: [vue()],
   resolve: {
     alias: {

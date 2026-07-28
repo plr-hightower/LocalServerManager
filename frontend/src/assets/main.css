@@ -134,9 +134,18 @@ code,
 }
 
 .nav__brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
   font-weight: 700;
   font-size: var(--fs-lg);
   margin-right: var(--gap-lg);
+}
+
+.nav__version {
+  font-weight: 400;
+  font-size: var(--fs-sm);
+  color: var(--color-muted);
 }
 
 .nav__link {

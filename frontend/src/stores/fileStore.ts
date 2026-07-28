@@ -28,6 +28,7 @@ export const useFileStore = defineStore('files', () => {
         form.append('created_by', server.core_settings.created_by);
         form.append('path', path);
         form.append('password', password);
+        for (const file of files) form.append('paths', file.webkitRelativePath || file.name);
         for (const file of files) form.append('files', file);
 
         await api.post('/files/upload', form, {

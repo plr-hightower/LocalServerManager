@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ### Added
+- Folder upload in the file view, alongside single-file upload.
+- Version number under the nav title, taken from the released package version.
 - Now true or false are checkboxes.
 - File viewing and uploading, so by extention mod support
 - Text logging
@@ -20,6 +22,7 @@
 - Fixed slow downloads for world files
 
 ### Changed
+- Nav title renamed from "Hightower" to "To be named".
 
 ### Removed
 - Removed seq.
