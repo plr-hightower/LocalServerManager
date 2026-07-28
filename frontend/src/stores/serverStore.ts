@@ -28,7 +28,7 @@ export const useServerStore = defineStore('servers', () => {
         return counts;
     });
 
-    // servers the user has hidden from view (UI-only — NOT deleted on the backend)
+    // servers the user has hidden from view (UI-only , NOT deleted on the backend)
     const hiddenIds = ref(new Set<number>());
 
     const visibleServers = computed(() =>
@@ -60,6 +60,16 @@ export const useServerStore = defineStore('servers', () => {
         await fetchServers();
     }
 
+    // deletes the server + container for real (gated by the server's manager password)
+    async function remove(server: ServerSettingsS, password: string) {
+        await api.post('/server/deleteServer', {
+            name: server.core_settings.name,
+            created_by: server.core_settings.created_by,
+            password,
+        });
+        await fetchServers();
+    }
+
     async function changeStatus(server: ServerSettingsS, action: StatusE) {
         await api.post<{ success: boolean }>('/server/status', {
             name: server.core_settings.name,
@@ -85,6 +95,7 @@ export const useServerStore = defineStore('servers', () => {
         statusCounts,
         fetchServers,
         create,
+        remove,
         changeStatus,
         fetchHealth,
         visibleServers,

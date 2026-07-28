@@ -35,13 +35,14 @@ export class DbService {
         try {
             const { core_settings, game_settings } = server;
             const gameSettingsJson = JSON.stringify(game_settings ?? {});
+            const envVisibilityJson = JSON.stringify(core_settings.env_visibility ?? {});
 
             const [result] = await pool.execute<ResultSetHeader>(
                 `INSERT INTO servers(
-            name, game_container, container_id, ram_alloc_mb, 
-            max_num_players, status, host_port, default_host_port, 
-            created_by, created_at, game_settings
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            name, game_container, container_id, ram_alloc_mb,
+            max_num_players, status, host_port, default_host_port,
+            created_by, created_at, game_settings, manager_password, env_visibility
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     core_settings.name,
                     core_settings.game_container, // Matches your schema's typo
@@ -53,7 +54,9 @@ export class DbService {
                     core_settings.default_host_port ?? null,
                     core_settings.created_by,
                     core_settings.created_at,
-                    gameSettingsJson
+                    gameSettingsJson,
+                    core_settings.manager_password ?? null,
+                    envVisibilityJson
                 ]
             );
 
@@ -118,7 +121,8 @@ export class DbService {
                     host_port: element.host_port,
                     default_host_port: element.default_host_port,
                     created_by: element.created_by,
-                    created_at: element.created_at
+                    created_at: element.created_at,
+                    env_visibility: parseJsonColumn(element.env_visibility)
                 },
                 game_settings: parsedGameSettings
             };
@@ -182,9 +186,20 @@ function rowToServerSettings(row: RowDataPacket): ServerSettingsS {
             default_host_port: row.default_host_port,
             created_by: row.created_by,
             created_at: row.created_at,
+            manager_password: row.manager_password,
+            env_visibility: parseJsonColumn(row.env_visibility),
         },
         game_settings: typeof row.game_settings === 'string'
             ? JSON.parse(row.game_settings)
             : row.game_settings,
     });
+}
+
+// mysql2 returns JSON columns already parsed, but guard for string just in case
+function parseJsonColumn(value: unknown): unknown {
+    if (value == null) return undefined;
+    if (typeof value === 'string') {
+        try { return JSON.parse(value); } catch { return undefined; }
+    }
+    return value;
 }

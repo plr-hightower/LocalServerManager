@@ -1,0 +1,6 @@
+START TRANSACTION;
+
+ALTER TABLE servers
+    ADD COLUMN file_password VARCHAR(255) NULL;
+
+COMMIT;

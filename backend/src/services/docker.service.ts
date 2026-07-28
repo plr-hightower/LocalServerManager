@@ -63,16 +63,17 @@ async function createContainer(settings: ServerSettingsS, manifest: GameManifest
     return container.id;
 }
 
-async function deleteContainer(containerId:string): Promise<boolean>{
-    //Need runtime validation so no fuck ups, same with stop container
+async function deleteContainer(containerId:string): Promise<void>{
     const container:Container = docker.getContainer(containerId);
-    const info = await container.inspect();
-
-    if(!info.State.Paused){
-        await container.stop();
+    try {
+        await container.stop(); // graceful SIGTERM lets the game autosave
+    } catch (err: unknown) {
+        // ignore "already stopped"
+        if (!(err instanceof Error && (err as { statusCode?: number }).statusCode === 304)) {
+            throw err;
+        }
     }
     await container.remove();
-    return false;
 }
 
 async function getDockerStats(servers: ServerSettingsS[]): Promise<ContainerStatS[]> {
@@ -86,13 +87,14 @@ async function getDockerStats(servers: ServerSettingsS[]): Promise<ContainerStat
             const container = docker.getContainer(containerInfo.Id);
             const stat = await container.stats({ stream: false });
 
-            const cpuDelta = stat.cpu_stats.cpu_usage.total_usage - stat.precpu_stats.cpu_usage.total_usage;
-            const systemDelta = stat.cpu_stats.system_cpu_usage - stat.precpu_stats.system_cpu_usage;
-            const cpuUsagePercent = (cpuDelta / systemDelta) * 100;
+            // guard empty stats blocks -> no NaN
+            const cpuDelta = (stat.cpu_stats?.cpu_usage?.total_usage ?? 0) - (stat.precpu_stats?.cpu_usage?.total_usage ?? 0);
+            const systemDelta = (stat.cpu_stats?.system_cpu_usage ?? 0) - (stat.precpu_stats?.system_cpu_usage ?? 0);
+            const cpuUsagePercent = systemDelta > 0 ? Math.max(0, (cpuDelta / systemDelta) * 100) : 0;
 
-            const memoryUsageMb = stat.memory_stats.usage / 1024 / 1024;
-            const memoryLimitMb = stat.memory_stats.limit / 1024 / 1024;
-            const memoryUsagePercent = (memoryUsageMb / memoryLimitMb) * 100;
+            const memoryUsageMb = (stat.memory_stats?.usage ?? 0) / 1024 / 1024;
+            const memoryLimitMb = (stat.memory_stats?.limit ?? 0) / 1024 / 1024;
+            const memoryUsagePercent = memoryLimitMb > 0 ? (memoryUsageMb / memoryLimitMb) * 100 : 0;
 
             return ContainerStatSchema.parse({
                 containerId: containerInfo.Id,
@@ -128,6 +130,46 @@ async function stopContainer(containerId: string): Promise<void> {
 
     await container.stop();
 }
+// docker state -> our status; missing container = error
+export function mapDockerState(state: string | undefined): StatusE {
+    switch (state) {
+        case "running":
+        case "restarting":
+        case "paused":
+            return "started";
+        case "created":
+        case "exited":
+        case "dead":
+        case "removing":
+            return "stopped";
+        default:
+            return "error";
+    }
+}
+
+export async function getActualStatuses(containerIds: string[]): Promise<Map<string, StatusE>> {
+    const containers = await docker.listContainers({ all: true });
+    const stateById = new Map(containers.map(c => [c.Id, c.State]));
+    return new Map(containerIds.map(id => [id, mapDockerState(stateById.get(id))]));
+}
+
+// heal DB status from docker (source of truth)
+export async function reconcileStatuses(db: DbService): Promise<void> {
+    const servers = await db.getAllServers();
+    if (servers.length === 0) return;
+
+    const actual = await getActualStatuses(servers.map(s => s.core_settings.container_id));
+
+    await Promise.all(servers.map(server => {
+        const { status, server_id, container_id } = server.core_settings;
+        const truth = actual.get(container_id);
+        if (truth && truth !== status && server_id !== undefined) {
+            return db.updateServerStatus(server_id, truth);
+        }
+        return undefined;
+    }));
+}
+
 async function watchContainerEvents(db: DbService): Promise<void> {
     const eventStream = await docker.getEvents({
         filters: {

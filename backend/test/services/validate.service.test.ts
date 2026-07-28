@@ -51,6 +51,13 @@ describe('validate middleware', () => {
     expect(payload).toHaveProperty('error')
   })
 
+  it('reports the error message as "Invalid body"', () => {
+    const { req, res, next } = makeReqRes({ name: 'hello' })
+    validate(schema)(req, res, next)
+    const payload = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(payload.error).toBe('Invalid body')
+  })
+
   it('returns details array in json on invalid body', () => {
     const { req, res, next } = makeReqRes({ name: 'hello' })
     validate(schema)(req, res, next)

@@ -104,7 +104,15 @@ describe('downloadWorld', () => {
     const req = mockReq({ name: 'goonab2', created_by: 'admin' })
     const res = mockRes()
     await worldController.downloadWorld(req, res)
-    expect(streamWorldDownload).toHaveBeenCalledWith(stoppedServer, res)
+    expect(streamWorldDownload).toHaveBeenCalledWith(stoppedServer, res, undefined)
+  })
+
+  it('forwards the volume index to streamWorldDownload', async () => {
+    dbMock.getServerByName.mockResolvedValue(stoppedServer)
+    const req = mockReq({ name: 'goonab2', created_by: 'admin', vol: '1' })
+    const res = mockRes()
+    await worldController.downloadWorld(req, res)
+    expect(streamWorldDownload).toHaveBeenCalledWith(stoppedServer, res, 1)
   })
 
   it('does not return an error response on successful download', async () => {

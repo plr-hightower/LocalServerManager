@@ -38,6 +38,9 @@ import {
   stopContainer,
   getDockerStats,
   watchContainerEvents,
+  mapDockerState,
+  getActualStatuses,
+  reconcileStatuses,
 } from '../../src/services/docker.service.js'
 import { DbService } from '../../src/repository/db.repository.js'
 
@@ -147,21 +150,22 @@ describe('createContainer', () => {
 })
 
 describe('deleteContainer', () => {
-  it('calls container.stop() when not paused', async () => {
-    mocks.container.inspect.mockResolvedValue({ State: { Paused: false } })
+  it('gracefully stops then removes the container', async () => {
     await deleteContainer('mock-container-id-abc123')
     expect(mocks.container.stop).toHaveBeenCalledOnce()
+    expect(mocks.container.remove).toHaveBeenCalledOnce()
   })
 
-  it('skips container.stop() when container is paused', async () => {
-    mocks.container.inspect.mockResolvedValue({ State: { Paused: true } })
-    await deleteContainer('mock-container-id-abc123')
-    expect(mocks.container.stop).not.toHaveBeenCalled()
-  })
-
-  it('always calls container.remove()', async () => {
+  it('ignores a 304 "already stopped" and still removes', async () => {
+    mocks.container.stop.mockRejectedValue(Object.assign(new Error('already stopped'), { statusCode: 304 }))
     await deleteContainer('mock-container-id-abc123')
     expect(mocks.container.remove).toHaveBeenCalledOnce()
+  })
+
+  it('propagates a non-304 stop error and does not remove', async () => {
+    mocks.container.stop.mockRejectedValue(Object.assign(new Error('boom'), { statusCode: 500 }))
+    await expect(deleteContainer('mock-container-id-abc123')).rejects.toThrow('boom')
+    expect(mocks.container.remove).not.toHaveBeenCalled()
   })
 
   it('calls docker.getContainer with the provided ID', async () => {
@@ -274,6 +278,25 @@ describe('getDockerStats', () => {
     const result = await getDockerStats([])
     expect(result).toEqual([])
   })
+
+  it('emits zeros instead of NaN when stats blocks are empty (first read after start)', async () => {
+    mocks.dockerInstance.listContainers.mockResolvedValue([
+      { Id: 'mock-container-id-abc123', Names: ['/test-server'] },
+    ])
+    // Docker returns empty precpu/memory blocks on a container's first stats read
+    mocks.container.stats.mockResolvedValue({
+      cpu_stats: {},
+      precpu_stats: {},
+      memory_stats: {},
+    })
+
+    const result = await getDockerStats([baseServer])
+    expect(result).toHaveLength(1)
+    expect(result[0].cpuUsagePercent).toBe(0)
+    expect(result[0].memoryUsageMb).toBe(0)
+    expect(result[0].memoryLimitMb).toBe(0)
+    expect(result[0].memoryUsagePercent).toBe(0)
+  })
 })
 
 describe('watchContainerEvents', () => {
@@ -325,5 +348,83 @@ describe('watchContainerEvents', () => {
     await new Promise(r => setImmediate(r))
 
     expect(mockDb.updateServerStatusByContainerId).not.toHaveBeenCalled()
+  })
+})
+
+describe('mapDockerState', () => {
+  it('maps running-like states to started', () => {
+    expect(mapDockerState('running')).toBe('started')
+    expect(mapDockerState('restarting')).toBe('started')
+    expect(mapDockerState('paused')).toBe('started')
+  })
+
+  it('maps stopped-like states to stopped', () => {
+    expect(mapDockerState('exited')).toBe('stopped')
+    expect(mapDockerState('created')).toBe('stopped')
+    expect(mapDockerState('dead')).toBe('stopped')
+  })
+
+  it('maps a missing/unknown state to error', () => {
+    expect(mapDockerState(undefined)).toBe('error')
+    expect(mapDockerState('weird')).toBe('error')
+  })
+})
+
+describe('getActualStatuses', () => {
+  it('resolves each id to its real status in one Docker call', async () => {
+    mocks.dockerInstance.listContainers.mockResolvedValue([
+      { Id: 'a', State: 'running' },
+      { Id: 'b', State: 'exited' },
+    ])
+    const result = await getActualStatuses(['a', 'b', 'c'])
+    expect(result.get('a')).toBe('started')
+    expect(result.get('b')).toBe('stopped')
+    expect(result.get('c')).toBe('error')
+    expect(mocks.dockerInstance.listContainers).toHaveBeenCalledOnce()
+  })
+})
+
+describe('reconcileStatuses', () => {
+  const mkServer = (server_id: number, container_id: string, status: string) =>
+    ({ core_settings: { server_id, container_id, status } } as unknown as ServerSettingsS)
+
+  it('updates only the servers whose real state differs', async () => {
+    const mockDb = {
+      getAllServers: vi.fn().mockResolvedValue([
+        mkServer(1, 'a', 'starting'),
+        mkServer(2, 'b', 'started'),
+      ]),
+      updateServerStatus: vi.fn().mockResolvedValue(undefined),
+    }
+    mocks.dockerInstance.listContainers.mockResolvedValue([
+      { Id: 'a', State: 'running' },
+      { Id: 'b', State: 'running' },
+    ])
+
+    await reconcileStatuses(mockDb as unknown as DbService)
+
+    expect(mockDb.updateServerStatus).toHaveBeenCalledOnce()
+    expect(mockDb.updateServerStatus).toHaveBeenCalledWith(1, 'started')
+  })
+
+  it('marks a server as error when its container is gone', async () => {
+    const mockDb = {
+      getAllServers: vi.fn().mockResolvedValue([mkServer(3, 'gone', 'started')]),
+      updateServerStatus: vi.fn().mockResolvedValue(undefined),
+    }
+    mocks.dockerInstance.listContainers.mockResolvedValue([])
+
+    await reconcileStatuses(mockDb as unknown as DbService)
+
+    expect(mockDb.updateServerStatus).toHaveBeenCalledWith(3, 'error')
+  })
+
+  it('does nothing when there are no servers', async () => {
+    const mockDb = {
+      getAllServers: vi.fn().mockResolvedValue([]),
+      updateServerStatus: vi.fn(),
+    }
+    await reconcileStatuses(mockDb as unknown as DbService)
+    expect(mockDb.updateServerStatus).not.toHaveBeenCalled()
   })
 })

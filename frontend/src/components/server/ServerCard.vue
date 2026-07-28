@@ -15,7 +15,7 @@
                 </div>
                 <div>
                     <span class="label">Port</span>
-                    <span class="mono">{{ server.core_settings.host_port ?? '—' }}</span>
+                    <span class="mono">{{ server.core_settings.host_port ?? ',' }}</span>
                 </div>
                 <div>
                     <span class="label">Max Players</span>

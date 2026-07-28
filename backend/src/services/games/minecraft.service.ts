@@ -1,5 +1,6 @@
 import { IGameService } from "../../interfaces/IGameService.js";
 import { GameManifestS, GameManifestSchema, ServerSettingsS, MinecraftSettingsS } from "@hightower/shared";
+import { firstFreePort } from "../serverHelper.service.js";
 
 // ONLY THINGS THAT ARE UNIQUE TO MINECRAFT, This goes for all other files like this
 // ALL the states and shit will be read from the database, so no class instantiations, this is why we export this like this
@@ -33,10 +34,5 @@ export const GameService: IGameService = {
 
     getDefaultPort: (): string => '25565',
 
-    getHostPort: (numberOfGameServers: number): number => {
-        if (25565 + numberOfGameServers > 65535) {
-            throw new Error("New host port exceeds the max port count");
-        }
-        return (25565 + numberOfGameServers);
-    }
+    getHostPort: (usedPorts: Set<number>): number => firstFreePort(25565, 1, usedPorts),
 };
