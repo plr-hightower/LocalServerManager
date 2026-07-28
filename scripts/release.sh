@@ -7,7 +7,7 @@
 #         (root/backend/frontend/shared package.json + lockfile), roll
 #         CHANGELOG.md's [Unreleased] section into a dated release section,
 #         commit, and push. Only bug fixes / final touches belong on a
-#         release branch from here on — no new features.
+#         release branch from here on , no new features.
 #
 # finish: merge the release branch into master (--no-ff, tagged vX.Y.Z) AND
 #         back into dev (--no-ff), matching GitFlow's "release finish", then
@@ -15,7 +15,7 @@
 #
 # Note: unlike feature/bug-fix branches in this repo (which squash-merge via
 # GitHub PR), the release-branch merge here is a direct, real merge commit on
-# both sides. That's intentional — GitFlow merges the same release branch into
+# both sides. That's intentional , GitFlow merges the same release branch into
 # master and dev, so squashing would produce divergent commit content on each
 # side and cause pain on the next merge between them.
 #
@@ -83,7 +83,7 @@ cmd_start() {
   npm install --package-lock-only
 
   if ! grep -q "^## \[Unreleased\]$" "$CHANGELOG"; then
-    echo "Could not find '## [Unreleased]' in $CHANGELOG — aborting."
+    echo "Could not find '## [Unreleased]' in $CHANGELOG , aborting."
     exit 1
   fi
 

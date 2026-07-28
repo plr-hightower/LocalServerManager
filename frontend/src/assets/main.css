@@ -28,6 +28,8 @@
   --color-danger: #8b1f1f;
   --color-danger-hover: #a52424;
   --color-success: #46a758;
+  --color-accent: #6d5efc;
+  --color-accent-hover: #8375ff;
 
   /* status */
   --status-started: #46a758;
@@ -132,9 +134,18 @@ code,
 }
 
 .nav__brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
   font-weight: 700;
   font-size: var(--fs-lg);
   margin-right: var(--gap-lg);
+}
+
+.nav__version {
+  font-weight: 400;
+  font-size: var(--fs-sm);
+  color: var(--color-muted);
 }
 
 .nav__link {
@@ -265,6 +276,15 @@ code,
   background: var(--color-danger-hover);
 }
 
+.btn--accent {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.btn--accent:hover {
+  background: var(--color-accent-hover);
+}
+
 .btn--ghost {
   background: transparent;
   border-color: var(--color-border);
@@ -356,11 +376,42 @@ code,
 }
 
 /* Forms */
+.form-section + .form-section {
+  margin-top: var(--gap-lg);
+  padding-top: var(--gap-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.form-section__title {
+  margin-bottom: var(--gap-md);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--gap-md) var(--gap-lg);
+}
+
 .form-field {
   display: flex;
   flex-direction: column;
   gap: var(--gap-xs);
   margin-bottom: var(--gap-md);
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  cursor: pointer;
+  align-self: end;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
 }
 
 .label {

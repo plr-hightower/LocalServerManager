@@ -6,14 +6,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/config.sh"
 
 echo "================================"
-echo "  Server Project — Init Script  "
+echo "  Server Project , Init Script  "
 echo "================================"
 
 # ── 1. Start Docker if not running ──────────────────────────
 echo ""
 echo "[1/4] Checking Docker..."
 if ! docker info > /dev/null 2>&1; then
-  echo "Docker not running — starting it..."
+  echo "Docker not running , starting it..."
   sudo systemctl start docker
   sleep 3  
 fi
@@ -37,7 +37,7 @@ echo "[4/4] Running migrations..."
 
 echo ""
 echo "================================"
-echo "  Done — everything is running  "
+echo "  Done , everything is running  "
 echo "================================"
 echo ""
 echo "Frontend: http://localhost"

@@ -13,7 +13,7 @@ const db = new DbService();
 /// </summary>
 const downloadWorld = async (req: Request, res: Response) => {
     try {
-        const { name , created_by}: WorldRequestS = WorldRequestSchema.parse(req.query);
+        const { name , created_by, vol}: WorldRequestS = WorldRequestSchema.parse(req.query);
 
         console.log('[downloadWorld] looking up server:', JSON.stringify(name));
         const server = await db.getServerByName(name);
@@ -26,7 +26,7 @@ const downloadWorld = async (req: Request, res: Response) => {
             return res.status(400).json(({ error: "Stop the server before downloading" }));
         }
 
-        await streamWorldDownload(server, res);
+        await streamWorldDownload(server, res, vol);
 
     } catch (err: unknown) {
         if (err instanceof ZodError) {

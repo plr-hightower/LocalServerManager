@@ -1,11 +1,12 @@
 import type { NextFunction, Request,Response } from "express";
 
 import { IGameService } from "../interfaces/IGameService.js";
-import { CreateServerRequestS, CreateServerRequestSchema, DeleteServerRequestS, DeleteServerRequestSchema, GameE, GameManifestS, HealthCheckResponseS, HealthCheckResponseSchema, ServerActionSchema, ServerSettingsS, ServerSettingsSchema, StatusE, StatusEnum } from '@hightower/shared';
+import { CreateServerRequestS, CreateServerRequestSchema, DeleteServerRequestS, DeleteServerRequestSchema, GameManifestS, HealthCheckResponseS, HealthCheckResponseSchema, ServerActionSchema, ServerSettingsS, ServerSettingsSchema, StatusE, StatusEnum } from '@hightower/shared';
 import { DbService } from "../repository/db.repository.js";
 import { success, ZodError } from "zod";
-import { createContainer, deleteContainer, getDockerStats, startContainer, stopContainer } from "../services/docker.service.js";
-import { getGameService, getManifest } from "../services/game.service.js";
+import { createContainer, deleteContainer, getDockerStats, startContainer, stopContainer, reconcileStatuses } from "../services/docker.service.js";
+import { getGameService, getManifest, getOccupiedPorts } from "../services/game.service.js";
+import { hashManagerPassword, verifyManagerPassword, isMasterPassword } from "../services/password.service.js";
 import { hasEnoughRam } from "../services/serverHelper.service.js";
 import { logger } from "../logger.js";
 import { error } from "console";
@@ -39,19 +40,20 @@ const buildServer = async (req:Request, res:Response) => {
         const window = Number(process.env.CREATE_SERVER_WINDOW_MINUTES ?? 60);
         const timeElapsedSinceBuild = new Date(Date.now() - window * 60 * 1000);
 
+        const bypassLimits = isMasterPassword(requestSettings.admin_password);
+
         if (await db.countServers() >= maxTotalServers){
             return res.status(429).json({
                 error: "Max servers limit reached."
             });
         }
-        if (await db.countServersSince(timeElapsedSinceBuild) >= maxServersWithinWindow) {
+        if (!bypassLimits && await db.countServersSince(timeElapsedSinceBuild) >= maxServersWithinWindow) {
             return res.status(429).json({
                 error: `Server creation limit reached: max ${maxServersWithinWindow} per ${window} minute(s).`
             });
         }
         if(await db.getServerByName(settings.core_settings.name) !== null){
-            //Find the proper status eventually
-            return res.status(400).json("Server name already exists");
+            return res.status(400).json({ error: "Server name already exists" });
         }
 
         const currentUsedMb = await db.sumRamAllocForActiveServers();
@@ -60,16 +62,20 @@ const buildServer = async (req:Request, res:Response) => {
         }
 
         // Setting up the settings
-        const game: GameE = settings.core_settings.game_container;
         const gameService = await getGameService(settings);
 
         // Set ports before the manifest, else will not work
         // TODO: make the order irrelevant
         settings.core_settings.default_host_port = gameService.getDefaultPort();
-        settings.core_settings.host_port = gameService.getHostPort((await db.getServersByGame(game)).length);
+        const occupiedPorts = await getOccupiedPorts(await db.getAllServers());
+        settings.core_settings.host_port = gameService.getHostPort(occupiedPorts);
 
         const manifest: GameManifestS = await gameService.getGameManifest(settings);
 
+
+        if (settings.core_settings.manager_password) {
+            settings.core_settings.manager_password = await hashManagerPassword(settings.core_settings.manager_password);
+        }
 
         settings.core_settings.container_id = await createContainer(settings,manifest);
         const insertId:number = await db.logNewServer(settings);
@@ -171,8 +177,13 @@ const deleteServer = async (req:Request, res:Response) => {
 
         const serverSettings:ServerSettingsS | null = await db.getServerByName(request.name);
         if( serverSettings === null || !serverSettings.core_settings.server_id){
-            return res.status(404);
+            return res.status(404).json({ error: "Server not found" });
         }
+
+        if (!await verifyManagerPassword(serverSettings, request.password)) {
+            return res.status(401).json({ error: "Invalid password" });
+        }
+
         await deleteContainer(serverSettings.core_settings.container_id);
 
         await db.deleteServerRow(serverSettings.core_settings.server_id);
@@ -197,6 +208,13 @@ const getServerList = async (req:Request, res:Response) => {
     try {
         logger.info("Getting the server list.");
         const db:DbService = new DbService();
+
+        try {
+            await reconcileStatuses(db);
+        } catch (e) {
+            logger.warn({ err: e }, "Status reconcile failed; returning last known statuses");
+        }
+
         res.status(200).json(await db.getServerList());
 
     } catch(err:any) {

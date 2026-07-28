@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -12,20 +12,24 @@
   "dependencies": {
     "@hightower/shared": "*",
     "archiver": "^6.0.2",
+    "bcryptjs": "^2.4.3",
     "dotenv": "^17.4.2",
     "express": "^4.18.2",
     "morgan": "^1.10.1",
+    "multer": "^1.4.5-lts.1",
     "mysql2": "^3.20.0",
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
-    "pino-seq": "^4.0.0",
+    "pino-roll": "^4.0.0",
     "unzipper": "^0.12.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/archiver": "^6.0.4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/express": "^4.17.25",
     "@types/morgan": "^1.9.10",
+    "@types/multer": "^1.4.11",
     "@types/node": "^20.19.37",
     "@types/pino-http": "^5.8.4",
     "@types/unzipper": "^0.10.11",

@@ -20,7 +20,7 @@
             />
         </div>
 
-        <div v-else class="empty-state">No servers yet — click “Create Server”.</div>
+        <div v-else class="empty-state">No servers yet, click “Create Server”.</div>
     </div>
 </template>
 

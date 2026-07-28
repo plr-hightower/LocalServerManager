@@ -17,7 +17,7 @@ const docker = new Docker();
 /// </summary>
 /// <param name="server">The server whose world volumes to resolve.</param>
 /// <returns>An array of host filesystem paths, one per world volume.</returns>
-async function getWorldHostPaths(server: ServerSettingsS, manif?: GameManifestS): Promise<string[]> {
+export async function getWorldHostPaths(server: ServerSettingsS, manif?: GameManifestS): Promise<string[]> {
     const manifest: GameManifestS = manif ? manif : await getManifest(server);
     const paths: string[] = [];
 
@@ -36,17 +36,22 @@ async function getWorldHostPaths(server: ServerSettingsS, manif?: GameManifestS)
 /// </summary>
 /// <param name="server">The server whose world data to download.</param>
 /// <param name="res">The Express response to stream the archive to.</param>
-export async function streamWorldDownload(server: ServerSettingsS, res: Response): Promise<void> {
+export async function streamWorldDownload(server: ServerSettingsS, res: Response, vol?: number): Promise<void> {
     const manifest: GameManifestS = await getManifest(server);
     const hostPaths = await getWorldHostPaths(server, manifest);
 
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename="${server.core_settings.name}_world.zip"`);
+    if (vol !== undefined && (vol < 0 || vol >= hostPaths.length)) {
+        throw new Error(`Volume index ${vol} out of range`);
+    }
 
-    // Level 9 (max compression) is CPU-heavy enough to stall Node's single event
-    // loop on large worlds, blocking every other in-flight request. Level 1 still
-    // shrinks the archive meaningfully at a fraction of the CPU cost.
-    const archive = archiver('zip', { zlib: { level: 1 } });
+    const indices = vol !== undefined ? [vol] : hostPaths.map((_, i) => i);
+    const fileSuffix = vol !== undefined ? `vol${vol}` : 'world';
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${server.core_settings.name}_${fileSuffix}.zip"`);
+
+    // store: game saves are already compressed
+    const archive = archiver('zip', { store: true });
 
     archive.on('error', (err: Error) => {
         if (!res.headersSent) {
@@ -58,7 +63,7 @@ export async function streamWorldDownload(server: ServerSettingsS, res: Response
 
     archive.pipe(res);
 
-    for (let i = 0; i < manifest.worldVolumes.length; i++) {
+    for (const i of indices) {
         archive.directory(hostPaths[i], `vol${i}`);
     }
 

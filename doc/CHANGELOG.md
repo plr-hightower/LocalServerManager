@@ -8,6 +8,33 @@
 
 ### Changed
 
+## [0.5.0] 28 July 2026
+
+### Added
+- Folder upload in the file view, alongside single-file upload.
+- Version number under the nav title, taken from the released package version.
+- Now true or false are checkboxes.
+- File viewing and uploading, so by extention mod support
+- Text logging
+- Delete server button
+- Password auth for important actions
+- Better error handeling
+- Env ommition as it always should have been
+- Create server
+- Port checking and reusing
+
+### Fixed
+
+- Better download files
+- Better health check
+- Fixed slow downloads for world files
+
+### Changed
+- Nav title renamed from "Hightower" to "To be named".
+
+### Removed
+- Removed seq.
+
 ## [0.4.4] 20 July 2026
 
 ### Added

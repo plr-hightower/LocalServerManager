@@ -39,31 +39,24 @@ describe('GameService (minecraft)', () => {
   })
 
   describe('getHostPort', () => {
-    it('returns 25565 when there are no existing servers', () => {
-      expect(GameService.getHostPort(0)).toBe(25565)
+    it('returns 25565 when no ports are used', () => {
+      expect(GameService.getHostPort(new Set())).toBe(25565)
     })
 
-    it('returns 25566 for the second server', () => {
-      expect(GameService.getHostPort(1)).toBe(25566)
+    it('returns the next free port when the base is taken', () => {
+      expect(GameService.getHostPort(new Set([25565]))).toBe(25566)
     })
 
-    it('increments correctly for multiple servers', () => {
-      expect(GameService.getHostPort(5)).toBe(25570)
-      expect(GameService.getHostPort(10)).toBe(25575)
+    it('fills a gap left by a deleted server', () => {
+      expect(GameService.getHostPort(new Set([25565, 25567]))).toBe(25566)
     })
 
-    it('returns 65535 at the exact limit', () => {
-      const limit = 65535 - 25565
-      expect(GameService.getHostPort(limit)).toBe(65535)
+    it('skips a run of used ports', () => {
+      expect(GameService.getHostPort(new Set([25565, 25566, 25567]))).toBe(25568)
     })
 
-    it('throws when port would exceed 65535', () => {
-      const overflow = 65535 - 25565 + 1
-      expect(() => GameService.getHostPort(overflow)).toThrow('New host port exceeds the max port count')
-    })
-
-    it('throws for very large server counts', () => {
-      expect(() => GameService.getHostPort(99999)).toThrow()
+    it('ignores ports belonging to other games', () => {
+      expect(GameService.getHostPort(new Set([7000, 8211]))).toBe(25565)
     })
   })
 
