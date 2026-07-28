@@ -9,7 +9,7 @@ docker pull $IMAGE
 echo "Saving to $OUTPUT_DIR/$NAME.tar..."
 docker save $IMAGE -o $OUTPUT_DIR/$NAME.tar
 
-echo "Done — $OUTPUT_DIR/$NAME.tar"
+echo "Done , $OUTPUT_DIR/$NAME.tar"
 
 #How to use
 #./scripts/pull_external_image.sh minecraft itzg/minecraft-server:2026.7.0-java21

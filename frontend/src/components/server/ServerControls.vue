@@ -8,7 +8,7 @@
         </button>
         <button
             v-if="showDownload && canDownload"
-            class="btn btn--ghost btn--sm"
+            class="btn btn--accent btn--sm"
             :disabled="downloadPending"
             @click="download"
         >

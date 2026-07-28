@@ -13,6 +13,13 @@ vi.mock('../../src/services/docker.service.js', () => ({
   startContainer: vi.fn(),
   stopContainer: vi.fn(),
   getDockerStats: vi.fn().mockResolvedValue([]),
+  reconcileStatuses: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('../../src/services/password.service.js', () => ({
+  hashManagerPassword: vi.fn().mockResolvedValue('hashed'),
+  verifyManagerPassword: vi.fn().mockResolvedValue(true),
+  isMasterPassword: vi.fn().mockReturnValue(false),
 }))
 
 vi.mock('../../src/services/games/minecraft.service.js', () => ({
@@ -31,6 +38,7 @@ vi.mock('../../src/services/games/minecraft.service.js', () => ({
 import { serverController } from '../../src/controllers/server.controller.js'
 import { DbService } from '../../src/repository/db.repository.js'
 import * as dockerService from '../../src/services/docker.service.js'
+import { verifyManagerPassword, isMasterPassword } from '../../src/services/password.service.js'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -106,7 +114,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  // Note: intentionally not vi.restoreAllMocks() here — that would reset the
+  // Note: intentionally not vi.restoreAllMocks() here , that would reset the
   // vi.fn() implementations set inside the module-level vi.mock(...) factories
   // above (DbService, docker.service, minecraft.service) to empty stubs after
   // the first test, breaking every test after it.
@@ -170,6 +178,24 @@ describe('buildServer', () => {
     expect(res.json).toHaveBeenCalledWith(99)
   })
 
+  it('persists env_visibility passed in core_settings', async () => {
+    const logNewServer = vi.fn().mockResolvedValue(7)
+    makeDbMock({ logNewServer })
+    vi.mocked(dockerService.createContainer).mockResolvedValue('new-container-id')
+
+    const req = mockReq({
+      ...validBody,
+      core_settings: { ...validBody.core_settings, env_visibility: { MOTD: true, VIEW_DISTANCE: false } },
+    })
+    const res = mockRes()
+    await serverController.buildServer(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(logNewServer).toHaveBeenCalledTimes(1)
+    expect(logNewServer.mock.calls[0][0].core_settings.env_visibility)
+      .toEqual({ MOTD: true, VIEW_DISTANCE: false })
+  })
+
   it('returns 500 when createContainer throws', async () => {
     makeDbMock({
       getServerByName: vi.fn().mockResolvedValue(null),
@@ -225,6 +251,16 @@ describe('buildServer', () => {
     const res = mockRes()
     await serverController.buildServer(req, res)
     expect(res.status).toHaveBeenCalledWith(429)
+  })
+
+  it('bypasses the creation-window limit when the admin master password is supplied', async () => {
+    vi.mocked(isMasterPassword).mockReturnValueOnce(true)
+    makeDbMock({ countServersSince: vi.fn().mockResolvedValue(1) })
+    vi.mocked(dockerService.createContainer).mockResolvedValue('new-container-id')
+    const req = mockReq({ ...validBody, admin_password: 'master-key' })
+    const res = mockRes()
+    await serverController.buildServer(req, res)
+    expect(res.status).toHaveBeenCalledWith(200)
   })
 
   it('allows creation when nothing has been created within the window', async () => {
@@ -443,19 +479,40 @@ describe('deleteServer', () => {
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
+  it('returns 400 when password is missing', async () => {
+    makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    const req = mockReq({ name: 'test-server', created_by: 'admin' })
+    const res = mockRes()
+    await serverController.deleteServer(req, res)
+    expect(res.status).toHaveBeenCalledWith(400)
+  })
+
   it('returns 404 when server is not found', async () => {
     makeDbMock({ getServerByName: vi.fn().mockResolvedValue(null) })
-    const req = mockReq({ name: 'ghost', created_by: 'admin' })
+    const req = mockReq({ name: 'ghost', created_by: 'admin', password: 'secret' })
     const res = mockRes()
     await serverController.deleteServer(req, res)
     expect(res.status).toHaveBeenCalledWith(404)
+  })
+
+  it('returns 401 on wrong password and does not delete', async () => {
+    const db = makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(verifyManagerPassword).mockResolvedValueOnce(false)
+
+    const req = mockReq({ name: 'test-server', created_by: 'admin', password: 'wrong' })
+    const res = mockRes()
+    await serverController.deleteServer(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(401)
+    expect(dockerService.deleteContainer).not.toHaveBeenCalled()
+    expect(db.deleteServerRow).not.toHaveBeenCalled()
   })
 
   it('calls deleteContainer with the server container ID', async () => {
     makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
     vi.mocked(dockerService.deleteContainer).mockResolvedValue(false)
 
-    const req = mockReq({ name: 'test-server', created_by: 'admin' })
+    const req = mockReq({ name: 'test-server', created_by: 'admin', password: 'secret' })
     const res = mockRes()
     await serverController.deleteServer(req, res)
 
@@ -466,7 +523,7 @@ describe('deleteServer', () => {
     makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
     vi.mocked(dockerService.deleteContainer).mockResolvedValue(false)
 
-    const req = mockReq({ name: 'test-server', created_by: 'admin' })
+    const req = mockReq({ name: 'test-server', created_by: 'admin', password: 'secret' })
     const res = mockRes()
     await serverController.deleteServer(req, res)
     expect(res.status).toHaveBeenCalledWith(200)
@@ -476,7 +533,7 @@ describe('deleteServer', () => {
     const db = makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
     vi.mocked(dockerService.deleteContainer).mockResolvedValue(false)
 
-    const req = mockReq({ name: 'test-server', created_by: 'admin' })
+    const req = mockReq({ name: 'test-server', created_by: 'admin', password: 'secret' })
     const res = mockRes()
     await serverController.deleteServer(req, res)
 
@@ -487,7 +544,7 @@ describe('deleteServer', () => {
     makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
     vi.mocked(dockerService.deleteContainer).mockRejectedValue(new Error('Docker error'))
 
-    const req = mockReq({ name: 'test-server', created_by: 'admin' })
+    const req = mockReq({ name: 'test-server', created_by: 'admin', password: 'secret' })
     const res = mockRes()
     await serverController.deleteServer(req, res)
     expect(res.status).toHaveBeenCalledWith(500)

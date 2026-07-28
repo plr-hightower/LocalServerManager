@@ -16,3 +16,13 @@ export function hasEnoughRam(requestedMb: number, currentUsedMb: number): boolea
 
   return currentUsedMb + requestedMb <= totalMb - safetyMarginMb;
 }
+
+// first base >= `base` (stepping by `step`) where base+every offset is free.
+// offsets covers multi-port games, e.g. valheim binds base and base+1.
+export function firstFreePort(base: number, step: number, usedPorts: Set<number>, offsets: number[] = [0]): number {
+  const span = Math.max(...offsets);
+  for (let port = base; port + span <= 65535; port += step) {
+    if (offsets.every(o => !usedPorts.has(port + o))) return port;
+  }
+  throw new Error("New host port exceeds the max port count");
+}

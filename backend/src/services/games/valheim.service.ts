@@ -1,5 +1,6 @@
 import { IGameService } from "../../interfaces/IGameService.js";
 import { GameManifestS, GameManifestSchema, ServerSettingsS, ValheimSettingsS } from "@hightower/shared";
+import { firstFreePort } from "../serverHelper.service.js";
 
 export const GameService: IGameService = {
 
@@ -29,11 +30,6 @@ export const GameService: IGameService = {
 
     getDefaultPort: (): string => '2456',
 
-    getHostPort: (numberOfGameServers: number): number => {
-        const port = 7000 + (numberOfGameServers * 2);
-        if (port > 65535) {
-            throw new Error("New host port exceeds the max port count");
-        }
-        return port;
-    }
+    // valheim binds host_port and host_port+1
+    getHostPort: (usedPorts: Set<number>): number => firstFreePort(7000, 2, usedPorts, [0, 1]),
 };

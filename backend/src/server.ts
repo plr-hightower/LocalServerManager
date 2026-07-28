@@ -6,17 +6,23 @@ import { error } from "console";
 //since the default export of server.routes is router and is alone type shit
 import serverRouter from "./routes/server.routes.js";
 import worldRouter from "./routes/world.routes.js"
+import fileRouter from "./routes/file.routes.js"
 
 import express from 'express';
 import morgan from 'morgan';
 import { logger, closeLogger } from './logger.js'
 import { DbService } from "./repository/db.repository.js";
-import { watchContainerEvents } from "./services/docker.service.js";
+import { watchContainerEvents, reconcileStatuses } from "./services/docker.service.js";
 import { pinoHttp } from "pino-http";
 
 const app = express();
 const db = new DbService();
 await watchContainerEvents(db);
+try {
+  await reconcileStatuses(db);
+} catch (err) {
+  logger.error({ err }, "Initial status reconcile failed");
+}
 // listen for requests 
 app.listen(4532);
 
@@ -46,6 +52,7 @@ app.use(morgan('dev')); // third party middleware
 
 app.use("/api/server", serverRouter);
 app.use("/api/world", worldRouter);
+app.use("/api/files", fileRouter);
 
 
 // app.use((req:Request, res:Request, next:NextFunction) =>{

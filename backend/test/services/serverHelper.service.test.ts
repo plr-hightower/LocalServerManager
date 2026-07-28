@@ -1,13 +1,48 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import os from 'os'
-import { nameToInt, hasEnoughRam } from '../../src/services/serverHelper.service.js'
+import { nameToInt, hasEnoughRam, firstFreePort } from '../../src/services/serverHelper.service.js'
+
+describe('firstFreePort', () => {
+  it('returns the base when nothing is used', () => {
+    expect(firstFreePort(25565, 1, new Set())).toBe(25565)
+  })
+
+  it('finds the first free port after used ones', () => {
+    expect(firstFreePort(25565, 1, new Set([25565, 25566]))).toBe(25567)
+  })
+
+  it('fills a gap left by a deleted server', () => {
+    expect(firstFreePort(25565, 1, new Set([25565, 25567]))).toBe(25566)
+  })
+
+  it('respects the step (valheim binds two ports)', () => {
+    expect(firstFreePort(7000, 2, new Set([7000]))).toBe(7002)
+  })
+
+  it('reuses a freed even port with a step of 2', () => {
+    expect(firstFreePort(7000, 2, new Set([7002]))).toBe(7000)
+  })
+
+  it('throws when no port is free up to 65535', () => {
+    expect(() => firstFreePort(65535, 1, new Set([65535]))).toThrow('exceeds the max port count')
+  })
+
+  it('skips a base whose extra-port offset is occupied', () => {
+    // base 7000 is free, but 7001 (its +1) is taken -> must move to 7002
+    expect(firstFreePort(7000, 2, new Set([7001]), [0, 1])).toBe(7002)
+  })
+
+  it('accepts a base only when every offset is free', () => {
+    expect(firstFreePort(7000, 2, new Set([7000, 7001, 7003]), [0, 1])).toBe(7004)
+  })
+})
 
 describe('nameToInt', () => {
   it('returns a number', () => {
     expect(typeof nameToInt('hello')).toBe('number')
   })
 
-  it('is deterministic — same input always returns the same value', () => {
+  it('is deterministic , same input always returns the same value', () => {
     expect(nameToInt('my-server')).toBe(nameToInt('my-server'))
     expect(nameToInt('goonab2')).toBe(nameToInt('goonab2'))
   })
@@ -44,7 +79,7 @@ describe('nameToInt', () => {
     expect(nameToInt('my_server-1')).toBeGreaterThanOrEqual(0)
   })
 
-  it('is sensitive to character order — anagrams produce different results', () => {
+  it('is sensitive to character order , anagrams produce different results', () => {
     expect(nameToInt('abc')).not.toBe(nameToInt('bca'))
   })
 

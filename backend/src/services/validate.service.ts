@@ -5,7 +5,7 @@ export function validate (schema: ZodType): (req:Request, res: Response, next:Ne
     return (req, res, next) => {
         const result = schema.safeParse(req.body);
         if(!result.success){
-            res.status(400).json({error: "Invalide body", details: result.error.issues})
+            res.status(400).json({error: "Invalid body", details: result.error.issues})
             return;
         }
         req.body = result.data;
@@ -17,7 +17,7 @@ export function validateQuery (schema: ZodType): (req:Request, res: Response, ne
     return (req, res, next) => {
         const result = schema.safeParse(req.query);
         if(!result.success){
-            res.status(400).json({error: "Invalide query", details: result.error.issues})
+            res.status(400).json({error: "Invalid query", details: result.error.issues})
             return;
         }
         req.query = result.data as any;

@@ -2,11 +2,11 @@
 # scripts/fetch_all_images.sh
 #
 # Pulls (or builds), saves, and loads the Docker image for every supported
-# game in one shot — combines pull_external_image.sh + load_images.sh so you
+# game in one shot , combines pull_external_image.sh + load_images.sh so you
 # don't have to run one game at a time.
 #
 # Image references are read directly from backend/src/services/games/*.ts,
-# so this script never drifts out of sync with what the app actually uses —
+# so this script never drifts out of sync with what the app actually uses ,
 # add a new game there and this script picks it up automatically, no manual
 # list to update here.
 #
@@ -38,7 +38,7 @@ for service_file in "$GAMES_DIR"/*.service.ts; do
   image="$(grep -oP "image:\s*'\K[^']+" "$service_file" | head -n1 || true)"
 
   if [ -z "$image" ]; then
-    echo "⚠️  No image found in $service_file — skipping"
+    echo "⚠️  No image found in $service_file , skipping"
     continue
   fi
 
@@ -48,7 +48,7 @@ for service_file in "$GAMES_DIR"/*.service.ts; do
 
   if [ -n "$old_image" ] && [ "$old_image" != "$image" ]; then
     echo ""
-    echo "=== $name: image changed ($old_image -> $image) — removing old image ==="
+    echo "=== $name: image changed ($old_image -> $image) , removing old image ==="
     docker rmi "$old_image" 2>/dev/null || echo "  (old image not present locally / still in use by a container, leaving it)"
   fi
 
@@ -56,7 +56,7 @@ for service_file in "$GAMES_DIR"/*.service.ts; do
   echo "=== $name ($image) ==="
 
   # A game with its own docker/<name>/Dockerfile is built locally (e.g. a
-  # fixed fork of an upstream image) instead of pulled from a registry —
+  # fixed fork of an upstream image) instead of pulled from a registry ,
   # nothing to pull for those, since the image only exists once we build it.
   BUILD_CONTEXT="$PROJECT_ROOT/docker/$name"
   if [ -f "$BUILD_CONTEXT/Dockerfile" ]; then
@@ -69,8 +69,8 @@ for service_file in "$GAMES_DIR"/*.service.ts; do
   fi
 
   # Record the image we just pulled for next run's comparison. `grep -v`
-  # exits 1 (tripping set -e) if nothing matches to keep — e.g. a brand new
-  # refs file — so this also needs `|| true`.
+  # exits 1 (tripping set -e) if nothing matches to keep , e.g. a brand new
+  # refs file , so this also needs `|| true`.
   grep -v "^$name=" "$IMAGE_REFS_FILE" > "$IMAGE_REFS_FILE.tmp" 2>/dev/null || true
   echo "$name=$image" >> "$IMAGE_REFS_FILE.tmp"
   mv "$IMAGE_REFS_FILE.tmp" "$IMAGE_REFS_FILE"
@@ -81,4 +81,4 @@ echo "=== Loading all saved images into Docker ==="
 "$SCRIPT_DIR/load_images.sh" "$IMAGES_DIR"
 
 echo ""
-echo "All game images pulled, saved to $IMAGES_DIR, and loaded — ready for the backend to use."
+echo "All game images pulled, saved to $IMAGES_DIR, and loaded , ready for the backend to use."
