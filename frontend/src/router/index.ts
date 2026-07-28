@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import DashboardPage from '../components/pages/DashboardPage.vue';
 import ServerListPage from '../components/pages/ServerListPage.vue';
 import ServerDetailPage from '../components/pages/ServerDetailPage.vue';
+import ServerFilesPage from '../components/pages/ServerFilesPage.vue';
 import CreateServerPage from '../components/pages/CreateServerPage.vue';
 
 const router = createRouter({
@@ -11,6 +12,7 @@ const router = createRouter({
         { path: '/dashboard', name: 'Dashboard', component: DashboardPage },
         { path: '/serverList', name: 'ServerList', component: ServerListPage },
         { path: '/servers/:id', name: 'ServerDetail', component: ServerDetailPage, props: true },
+        { path: '/servers/:id/files', name: 'ServerFiles', component: ServerFilesPage, props: true },
         { path: '/createServer', name: 'CreateServer', component: CreateServerPage },
     ],
 });

@@ -4,7 +4,7 @@ export default defineConfig({
   plugins: [
     {
       // Vite globs .ts files but the runtime lookup uses .js extension from the
-      // template literal — they don't match. Patch game.service.ts before Vite
+      // template literal , they don't match. Patch game.service.ts before Vite
       // processes the dynamic import so the glob keys match the runtime lookup.
       name: 'patch-game-service-dynamic-import',
       enforce: 'pre',

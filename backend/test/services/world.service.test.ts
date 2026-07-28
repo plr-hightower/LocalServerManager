@@ -45,7 +45,7 @@ const baseServer: ServerSettingsS = {
   },
 }
 
-// Manifest with no world volumes — lets archiver finalize cleanly without filesystem reads
+// Manifest with no world volumes , lets archiver finalize cleanly without filesystem reads
 const emptyVolumeManifest: GameManifestS = {
   image: 'itzg/minecraft-server:2024.1.0',
   env: ['EULA=TRUE'],
@@ -123,7 +123,7 @@ describe('streamWorldDownload', () => {
     })
     mocks.volume.inspect.mockResolvedValue({ Mountpoint: '/tmp' })
     const res = mockRes()
-    // Don't await full completion — archiver may hang reading /tmp.
+    // Don't await full completion , archiver may hang reading /tmp.
     // getVolume is called before archiver starts, so waitFor catches it quickly.
     streamWorldDownload(baseServer, res).catch(() => {})
     await vi.waitFor(() => {

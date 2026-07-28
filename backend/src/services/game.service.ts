@@ -20,3 +20,16 @@ export async function getManifest(server: ServerSettingsS): Promise<GameManifest
     const gameService = await getGameService(server);
     return gameService.getGameManifest(server);
 }
+
+// every host port already bound by existing servers, incl. extra ports
+export async function getOccupiedPorts(servers: ServerSettingsS[]): Promise<Set<number>> {
+    const occupied = new Set<number>();
+    for (const server of servers) {
+        const port = server.core_settings.host_port;
+        if (port == null) continue;
+        occupied.add(port);
+        const manifest = await getManifest(server);
+        for (const offset of manifest.extraPorts) occupied.add(port + offset);
+    }
+    return occupied;
+}

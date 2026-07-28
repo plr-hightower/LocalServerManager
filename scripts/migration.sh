@@ -32,7 +32,7 @@ for file in "$MIGRATIONS_DIR"/*.sql; do
   fi
 
   if [ "$result" -gt 0 ]; then
-    echo "Skipping $filename — already applied"
+    echo "Skipping $filename , already applied"
     continue
   fi
 

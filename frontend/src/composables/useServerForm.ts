@@ -2,10 +2,10 @@ import { ref, computed, watch, toValue, type MaybeRefOrGetter } from 'vue';
 import * as z from 'zod';
 import { GameSettingsSchema, type GameE } from '@hightower/shared';
 
-// derived from the discriminated union — adding a game to GameSettingsSchema is enough
+// derived from the discriminated union , adding a game to GameSettingsSchema is enough
 const SCHEMAS: Record<string, z.ZodType> = Object.fromEntries(
     // zod v4 types the discriminator as a merged ZodEnum, but at runtime it's the branch's
-    // ZodLiteral — cast to the real type to read its value
+    // ZodLiteral , cast to the real type to read its value
     GameSettingsSchema.options.map(schema => [
         (schema.shape.game as unknown as z.ZodLiteral<GameE>).value,
         schema,
@@ -15,6 +15,7 @@ export interface FormField {
     key: string;
     type: 'text' | 'number' | 'boolean' | 'select' | 'fixed';
     default: unknown;
+    visibility: boolean; // default show/hide on the detail page; secrets default hidden
     options?: string[]; // for selects
     min?: number;
     max?: number;
@@ -45,9 +46,13 @@ export function useServerForm(
                 else if
                     (p.type === 'boolean') type = 'boolean';
 
+                const shapeField = (schema as z.ZodObject<z.ZodRawShape>).shape[key] as { meta?: () => Record<string, unknown> | undefined };
+                const secret = shapeField?.meta?.()?.secret === true;
+
                 return {
                     key, type,
                     default: p.default ?? p.const,
+                    visibility: !secret,
                     options: p.enum,
                     min: p.minimum,
                     max: p.maximum,
@@ -58,11 +63,18 @@ export function useServerForm(
 
     // initialised to defaults, rebuilt whenever the game changes
     const model = ref<Record<string, unknown>>({});
+    // per-field detail-page visibility, seeded from each field's default
+    const visibility = ref<Record<string, boolean>>({});
     watch([fields, () => toValue(opts.initial)], ([f, initial]) => {
         const next: Record<string, unknown> = {};
-        for (const field of f) next[field.key] = initial?.[field.key] ?? field.default;
+        const nextVisibility: Record<string, boolean> = {};
+        for (const field of f) {
+            next[field.key] = initial?.[field.key] ?? field.default;
+            nextVisibility[field.key] = field.visibility;
+        }
         next.game = toValue(game);
         model.value = next;
+        visibility.value = nextVisibility;
     }, { immediate: true });
 
     // reverts model[key] back to its schema default if the current value doesn't validate
@@ -75,5 +87,5 @@ export function useServerForm(
         }
     }
 
-    return { fields, model, readonly: !!opts.readonly, validateField };
+    return { fields, model, visibility, readonly: !!opts.readonly, validateField };
 }

@@ -16,7 +16,10 @@ export const CoreServerSettingsSchema = z.object({
     host_port: z.number().int().min(6000).max(65535).nullable(),
     default_host_port:z.string().nullable(),
     created_by: z.string(),
-    created_at: z.coerce.date()
+    created_at: z.coerce.date(),
+    manager_password: z.string().min(4).nullable().optional(),
+    // env-key -> visible; controls whether a setting shows on the detail page
+    env_visibility: z.record(z.string(), z.boolean()).optional(),
 });
 
 // I probably should not nest it like this, instead it should be like a general dep in
@@ -38,16 +41,16 @@ export const MinecraftSettingsSchema = z.object({
 
 export const ValheimSettingsSchema = z.object({
     game: z.literal("valheim"),
-    SERVER_PASS: z.string().min(5, "Password must be at least 5 characters."),
+    SERVER_PASS: z.string().min(5, "Password must be at least 5 characters.").meta({ secret: true }),
 });
 
 // Game/world settings (PalWorldSettings.ini, via thijsvanloef/palworld-server-docker).
-// SERVER_NAME, PORT, and PLAYERS come from core_settings instead — see palworld.service.ts.
+// SERVER_NAME, PORT, and PLAYERS come from core_settings instead , see palworld.service.ts.
 export const PalworldSettingsSchema = z.object({
     game: z.literal("palworld"),
 
-    SERVER_PASSWORD: z.string().min(1, "Server password is required."),
-    ADMIN_PASSWORD: z.string().min(1, "Admin password is required."),
+    SERVER_PASSWORD: z.string().min(1, "Server password is required.").meta({ secret: true }),
+    ADMIN_PASSWORD: z.string().min(1, "Admin password is required.").meta({ secret: true }),
 
     DIFFICULTY: z.enum(["None", "Normal", "Difficult"]).default("None"),
     RANDOMIZER_TYPE: z.string().default("None"),
@@ -222,18 +225,21 @@ export const GameSettingsSchema = z.discriminatedUnion("game",[
 
 // Since we don't want the user to play with certain values, we ommit them
 export const CreateServerRequestSchema = z.object({
-  core_settings: CoreServerSettingsSchema.omit({ 
-    server_id: true, 
+  core_settings: CoreServerSettingsSchema.omit({
+    server_id: true,
     container_id: true,
     status: true,
     host_port: true,
     default_host_port: true,
     created_at: true,
   }),
-  game_settings: GameSettingsSchema
+  game_settings: GameSettingsSchema,
+  admin_password: z.string().optional(),
 });
 
-export const DeleteServerRequestSchema = CoreServerSettingsSchema.pick({name: true, created_by: true});
+export const DeleteServerRequestSchema = CoreServerSettingsSchema
+    .pick({ name: true, created_by: true })
+    .extend({ password: z.string().min(1, "Password is required") });
 
 export const ServerActionSchema = z.object({
     name: z.string(),

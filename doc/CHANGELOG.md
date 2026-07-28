@@ -4,8 +4,20 @@
 
 ### Added
 - Now true or false are checkboxes.
+- File viewing and uploading, so by extention mod support
+- Text logging
+- Delete server button
+- Password auth for important actions
+- Better error handeling
+- Env ommition as it always should have been
+- Create server
+- Port checking and reusing
 
 ### Fixed
+
+- Better download files
+- Better health check
+- Fixed slow downloads for world files
 
 ### Changed
 

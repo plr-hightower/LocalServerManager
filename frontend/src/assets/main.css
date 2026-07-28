@@ -28,6 +28,8 @@
   --color-danger: #8b1f1f;
   --color-danger-hover: #a52424;
   --color-success: #46a758;
+  --color-accent: #6d5efc;
+  --color-accent-hover: #8375ff;
 
   /* status */
   --status-started: #46a758;
@@ -263,6 +265,15 @@ code,
 
 .btn--danger:hover {
   background: var(--color-danger-hover);
+}
+
+.btn--accent {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.btn--accent:hover {
+  background: var(--color-accent-hover);
 }
 
 .btn--ghost {

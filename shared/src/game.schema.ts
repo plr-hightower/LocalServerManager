@@ -60,7 +60,9 @@ export const HealthCheckResponseSchema = z.object({
     containers: z.array(ContainerStatSchema),
 });
 
-export const WorldRequestSchema = CoreServerSettingsSchema.pick({name: true, created_by: true});
+export const WorldRequestSchema = CoreServerSettingsSchema
+    .pick({ name: true, created_by: true })
+    .extend({ vol: z.coerce.number().int().min(0).optional() });
 
 
 export type WorldRequestS = z.infer<typeof WorldRequestSchema>;
