@@ -3,6 +3,14 @@
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Changed
+
+## [0.5.0] 28 July 2026
+
+### Added
 - Folder upload in the file view, alongside single-file upload.
 - Version number under the nav title, taken from the released package version.
 - Now true or false are checkboxes.
