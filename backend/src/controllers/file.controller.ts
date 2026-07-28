@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { ZodError } from 'zod';
 import fs from 'fs/promises';
-import path from 'path';
 import { DbService } from '../repository/db.repository.js';
 import {
     FileListRequestSchema,
@@ -9,7 +8,7 @@ import {
     FileUploadFieldsSchema,
     FileListResponseSchema,
 } from '@hightower/shared';
-import { listDirectory, deleteEntry, resolveUploadDir } from '../services/file.service.js';
+import { listDirectory, deleteEntry, resolveUploadDir, prepareUploadTarget } from '../services/file.service.js';
 import { verifyManagerPassword } from '../services/password.service.js';
 
 const db = new DbService();
@@ -74,7 +73,7 @@ const uploadFiles = async (req: Request, res: Response) => {
     const cleanup = () => Promise.all(files.map(f => fs.rm(f.path, { force: true }).catch(() => {})));
 
     try {
-        const { name, path: relPath, password } = FileUploadFieldsSchema.parse(req.body);
+        const { name, path: relPath, password, paths } = FileUploadFieldsSchema.parse(req.body);
 
         const server = await db.getServerByName(name);
         if (!server) {
@@ -95,8 +94,8 @@ const uploadFiles = async (req: Request, res: Response) => {
 
         const dir = await resolveUploadDir(server, relPath);
 
-        for (const file of files) {
-            const dest = path.join(dir, path.basename(file.originalname));
+        for (const [i, file] of files.entries()) {
+            const dest = await prepareUploadTarget(dir, paths[i] ?? file.originalname);
             try {
                 await fs.rename(file.path, dest);
             } catch {

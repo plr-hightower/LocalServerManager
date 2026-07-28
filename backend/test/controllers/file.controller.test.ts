@@ -12,13 +12,18 @@ const svc = vi.hoisted(() => ({
   listDirectory: vi.fn(),
   deleteEntry: vi.fn(),
   resolveUploadDir: vi.fn(),
+  prepareUploadTarget: vi.fn(),
 }))
 vi.mock('../../src/services/password.service.js', () => ({ verifyManagerPassword: svc.verifyManagerPassword }))
 vi.mock('../../src/services/file.service.js', () => ({
   listDirectory: svc.listDirectory,
   deleteEntry: svc.deleteEntry,
   resolveUploadDir: svc.resolveUploadDir,
+  prepareUploadTarget: svc.prepareUploadTarget,
 }))
+
+const fsMock = vi.hoisted(() => ({ rename: vi.fn(), copyFile: vi.fn(), rm: vi.fn() }))
+vi.mock('fs/promises', () => ({ default: fsMock }))
 
 import { fileController } from '../../src/controllers/file.controller.js'
 
@@ -63,6 +68,7 @@ const validBody = { name: 'srv', created_by: 'admin', path: 'vol0', password: 's
 
 beforeEach(() => {
   vi.clearAllMocks()
+  fsMock.rm.mockResolvedValue(undefined)
 })
 
 describe('listFiles', () => {
@@ -126,6 +132,14 @@ describe('deleteFiles', () => {
   })
 })
 
+function authorizeUpload() {
+  dbMock.getServerByName.mockResolvedValue(stoppedServer)
+  svc.verifyManagerPassword.mockResolvedValue(true)
+  svc.resolveUploadDir.mockResolvedValue('/vol/a')
+  svc.prepareUploadTarget.mockImplementation((dir: string, rel: string) => `${dir}/${rel}`)
+  fsMock.rename.mockResolvedValue(undefined)
+}
+
 describe('uploadFiles', () => {
   it('returns 401 on wrong password', async () => {
     dbMock.getServerByName.mockResolvedValue(stoppedServer)
@@ -150,5 +164,58 @@ describe('uploadFiles', () => {
     await fileController.uploadFiles(mockReq(validBody, []), res)
     expect(res.status).toHaveBeenCalledWith(400)
     expect(svc.resolveUploadDir).not.toHaveBeenCalled()
+  })
+
+  it('writes each file under the relative path sent alongside it', async () => {
+    authorizeUpload()
+
+    const files = [
+      { path: '/tmp/1', originalname: 'a.jar' },
+      { path: '/tmp/2', originalname: 'b.toml' },
+    ]
+    const paths = ['pack/mods/a.jar', 'pack/config/b.toml']
+    const res = mockRes()
+    await fileController.uploadFiles(mockReq({ ...validBody, paths }, files), res)
+
+    expect(svc.prepareUploadTarget).toHaveBeenCalledWith('/vol/a', 'pack/mods/a.jar')
+    expect(fsMock.rename).toHaveBeenCalledWith('/tmp/1', '/vol/a/pack/mods/a.jar')
+    expect(fsMock.rename).toHaveBeenCalledWith('/tmp/2', '/vol/a/pack/config/b.toml')
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('accepts a single path arriving as a bare string', async () => {
+    authorizeUpload()
+
+    const res = mockRes()
+    await fileController.uploadFiles(
+      mockReq({ ...validBody, paths: 'pack/mods/a.jar' }, [{ path: '/tmp/1', originalname: 'a.jar' }]),
+      res,
+    )
+
+    expect(svc.prepareUploadTarget).toHaveBeenCalledWith('/vol/a', 'pack/mods/a.jar')
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('falls back to the file name when no paths are sent', async () => {
+    authorizeUpload()
+
+    const res = mockRes()
+    await fileController.uploadFiles(mockReq(validBody, [{ path: '/tmp/1', originalname: 'a.jar' }]), res)
+
+    expect(svc.prepareUploadTarget).toHaveBeenCalledWith('/vol/a', 'a.jar')
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('returns 400 on a traversing path', async () => {
+    authorizeUpload()
+
+    const res = mockRes()
+    await fileController.uploadFiles(
+      mockReq({ ...validBody, paths: ['../../etc/passwd'] }, [{ path: '/tmp/1', originalname: 'a.jar' }]),
+      res,
+    )
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(svc.prepareUploadTarget).not.toHaveBeenCalled()
   })
 })
