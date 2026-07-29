@@ -3,6 +3,14 @@
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Changed
+
+## [0.5.1] 28 July 2026
+
+### Added
 - Forge, NeoForge and Quilt server types.
 - Selectable Java version.
 - Loader version pinning.
