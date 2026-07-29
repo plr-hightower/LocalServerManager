@@ -145,6 +145,13 @@ export class DbService {
         );
     }
 
+    async updateContainerId(server_id: number, containerId: string): Promise<void> {
+        await pool.execute(
+            "UPDATE servers SET container_id = ? WHERE server_id = ?",
+            [containerId, server_id]
+        );
+    }
+
     async updateServerStatusByContainerId(containerId: string, status: StatusE): Promise<void> {
         await pool.execute(
             "UPDATE servers SET status = ? WHERE container_id = ?",

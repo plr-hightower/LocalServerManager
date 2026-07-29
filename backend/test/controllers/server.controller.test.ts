@@ -9,6 +9,7 @@ vi.mock('../../src/repository/db.repository.js', () => ({
 
 vi.mock('../../src/services/docker.service.js', () => ({
   createContainer: vi.fn(),
+  recreateContainer: vi.fn().mockResolvedValue('b'.repeat(64)),
   deleteContainer: vi.fn(),
   startContainer: vi.fn(),
   stopContainer: vi.fn(),
@@ -61,6 +62,7 @@ function makeDbMock(overrides: Partial<InstanceType<typeof DbService>> = {}) {
     getAllServers: vi.fn().mockResolvedValue([]),
     getServersByStatus: vi.fn().mockResolvedValue([]),
     updateServerStatus: vi.fn().mockResolvedValue(undefined),
+    updateContainerId: vi.fn().mockResolvedValue(undefined),
     deleteServerRow: vi.fn().mockResolvedValue(true),
     getServerList: vi.fn().mockResolvedValue([]),
     countServers: vi.fn().mockResolvedValue(0),
@@ -176,6 +178,28 @@ describe('buildServer', () => {
     await serverController.buildServer(req, res)
     expect(res.status).toHaveBeenCalledWith(200)
     expect(res.json).toHaveBeenCalledWith(99)
+  })
+
+  it('does not start the container it just created', async () => {
+    makeDbMock()
+    vi.mocked(dockerService.createContainer).mockResolvedValue('new-container-id')
+
+    const res = mockRes()
+    await serverController.buildServer(mockReq(validBody), res)
+
+    expect(dockerService.createContainer).toHaveBeenCalledOnce()
+    expect(dockerService.startContainer).not.toHaveBeenCalled()
+  })
+
+  it('records the new server as stopped, not starting', async () => {
+    const logNewServer = vi.fn().mockResolvedValue(5)
+    makeDbMock({ logNewServer })
+    vi.mocked(dockerService.createContainer).mockResolvedValue('new-container-id')
+
+    const res = mockRes()
+    await serverController.buildServer(mockReq(validBody), res)
+
+    expect(logNewServer.mock.calls[0][0].core_settings.status).toBe('stopped')
   })
 
   it('persists env_visibility passed in core_settings', async () => {
@@ -548,6 +572,112 @@ describe('deleteServer', () => {
     const res = mockRes()
     await serverController.deleteServer(req, res)
     expect(res.status).toHaveBeenCalledWith(500)
+  })
+})
+
+// ── recreateServer ────────────────────────────────────────────────────────────
+
+describe('recreateServer', () => {
+  it('returns 400 when body is invalid', async () => {
+    makeDbMock()
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({ bad: 'data' }), res)
+    expect(res.status).toHaveBeenCalledWith(400)
+  })
+
+  it('returns 400 when password is missing', async () => {
+    makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({ name: 'test-server' }), res)
+    expect(res.status).toHaveBeenCalledWith(400)
+  })
+
+  it('returns 404 when server is not found', async () => {
+    makeDbMock({ getServerByName: vi.fn().mockResolvedValue(null) })
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({ name: 'ghost', password: 'secret' }), res)
+    expect(res.status).toHaveBeenCalledWith(404)
+  })
+
+  it('returns 401 on wrong password and does not touch the container', async () => {
+    const db = makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(verifyManagerPassword).mockResolvedValueOnce(false)
+
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({ name: 'test-server', password: 'wrong' }), res)
+
+    expect(res.status).toHaveBeenCalledWith(401)
+    expect(dockerService.recreateContainer).not.toHaveBeenCalled()
+    expect(db.updateContainerId).not.toHaveBeenCalled()
+  })
+
+  it('returns 200 and the new container id', async () => {
+    makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({ name: 'test-server', password: 'secret' }), res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith({ success: true, container_id: 'b'.repeat(64) })
+  })
+
+  it('persists the new container id', async () => {
+    const db = makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({ name: 'test-server', password: 'secret' }), res)
+
+    expect(db.updateContainerId).toHaveBeenCalledWith(1, 'b'.repeat(64))
+  })
+
+  it('leaves the server stopped after recreating', async () => {
+    const db = makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({ name: 'test-server', password: 'secret' }), res)
+
+    expect(db.updateServerStatus).toHaveBeenCalledWith(1, 'stopped')
+    expect(dockerService.startContainer).not.toHaveBeenCalled()
+  })
+
+  it('keeps the existing host port so the address does not change', async () => {
+    makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({ name: 'test-server', password: 'secret' }), res)
+
+    const passedSettings = vi.mocked(dockerService.recreateContainer).mock.calls[0][0]
+    expect(passedSettings.core_settings.host_port).toBe(25565)
+  })
+
+  it('allocates a port when the stored one is null', async () => {
+    const portless: ServerSettingsS = {
+      ...stoppedServer,
+      core_settings: { ...stoppedServer.core_settings, host_port: null },
+    }
+    makeDbMock({ getServerByName: vi.fn().mockResolvedValue(portless) })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({ name: 'test-server', password: 'secret' }), res)
+
+    const passedSettings = vi.mocked(dockerService.recreateContainer).mock.calls[0][0]
+    expect(passedSettings.core_settings.host_port).toBe(25566)
+  })
+
+  it('returns 500 and keeps the old container id when recreate throws', async () => {
+    const db = makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(dockerService.recreateContainer).mockRejectedValue(new Error('Docker error'))
+
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({ name: 'test-server', password: 'secret' }), res)
+
+    expect(res.status).toHaveBeenCalledWith(500)
+    expect(db.updateContainerId).not.toHaveBeenCalled()
   })
 })
 

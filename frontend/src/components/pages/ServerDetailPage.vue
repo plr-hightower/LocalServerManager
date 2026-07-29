@@ -12,10 +12,26 @@
                     <RouterLink class="btn btn--sm btn--accent" :to="`/servers/${server.core_settings.server_id}/files`">
                         Manage Files
                     </RouterLink>
+                    <button v-if="!recreating" class="btn btn--sm btn--ghost" @click="recreating = true">
+                        Apply Settings
+                    </button>
                     <button v-if="!confirming" class="btn btn--sm btn--danger" @click="confirming = true">
                         Delete Server
                     </button>
                 </div>
+
+                <form v-if="recreating" class="server-card__actions delete-confirm" @submit.prevent="onRecreate">
+                    <input class="input" type="password" v-model="recreatePassword" placeholder="Manager password" autocomplete="off" />
+                    <button class="btn btn--sm btn--accent" type="submit" :disabled="applying || !recreatePassword">
+                        {{ applying ? 'Rebuilding…' : 'Rebuild container' }}
+                    </button>
+                    <button class="btn btn--sm btn--ghost" type="button" @click="cancelRecreate">Cancel</button>
+                </form>
+                <p v-if="recreating" class="hint">
+                    Rebuilds the container so changed settings take effect. The world is kept and the
+                    server is left stopped.
+                </p>
+                <p v-if="recreateError" class="field-error">{{ recreateError }}</p>
 
                 <form v-if="confirming" class="server-card__actions delete-confirm" @submit.prevent="onDelete">
                     <input class="input" type="password" v-model="password" placeholder="Manager password" autocomplete="off" />
@@ -90,6 +106,31 @@ function cancelDelete() {
     deleteError.value = null;
 }
 
+const recreating = ref(false);
+const recreatePassword = ref('');
+const applying = ref(false);
+const recreateError = ref<string | null>(null);
+
+function cancelRecreate() {
+    recreating.value = false;
+    recreatePassword.value = '';
+    recreateError.value = null;
+}
+
+async function onRecreate() {
+    if (!server.value) return;
+    applying.value = true;
+    recreateError.value = null;
+    try {
+        await store.recreate(server.value, recreatePassword.value);
+        cancelRecreate();
+    } catch (e) {
+        recreateError.value = e instanceof Error ? e.message : 'Failed to rebuild container';
+    } finally {
+        applying.value = false;
+    }
+}
+
 async function onDelete() {
     if (!server.value) return;
     deleting.value = true;
@@ -115,5 +156,10 @@ async function onDelete() {
 }
 .delete-confirm .input {
     max-width: 220px;
+}
+.hint {
+    color: var(--fg-muted, #888);
+    font-size: 0.85rem;
+    margin-bottom: var(--gap-md);
 }
 </style>

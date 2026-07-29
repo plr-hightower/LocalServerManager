@@ -187,6 +187,11 @@ export const DeleteServerRequestSchema = CoreServerSettingsSchema
     .extend({ password: z.string().min(1, "Password is required") });
 
 
+// replaces the container so changed settings take effect , keeps the world volume
+export const RecreateServerRequestSchema = CoreServerSettingsSchema
+    .pick({ name: true })
+    .extend({ password: z.string().min(1, "Password is required") });
+
 export const ServerActionSchema = z.object({
     name: z.string(),
     action: StatusEnum,
@@ -204,6 +209,7 @@ export type StatusE = z.infer<typeof StatusEnum>;
 export type CoreServerSettingsS = z.infer<typeof CoreServerSettingsSchema>;
 export type CreateServerRequestS = z.infer<typeof CreateServerRequestSchema>;
 export type DeleteServerRequestS = z.infer<typeof DeleteServerRequestSchema>;
+export type RecreateServerRequestS = z.infer<typeof RecreateServerRequestSchema>;
 export type ServerSettingsS = z.infer<typeof ServerSettingsSchema>;
 export type ServerActionS = z.infer<typeof ServerActionSchema>;
 export type ValheimSettingsS = z.infer<typeof ValheimSettingsSchema>;

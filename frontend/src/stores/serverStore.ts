@@ -70,6 +70,15 @@ export const useServerStore = defineStore('servers', () => {
         await fetchServers();
     }
 
+    // replaces the container so changed settings apply , world volume is kept
+    async function recreate(server: ServerSettingsS, password: string) {
+        await api.post('/server/recreateServer', {
+            name: server.core_settings.name,
+            password,
+        });
+        await fetchServers();
+    }
+
     async function changeStatus(server: ServerSettingsS, action: StatusE) {
         await api.post<{ success: boolean }>('/server/status', {
             name: server.core_settings.name,
@@ -96,6 +105,7 @@ export const useServerStore = defineStore('servers', () => {
         fetchServers,
         create,
         remove,
+        recreate,
         changeStatus,
         fetchHealth,
         visibleServers,

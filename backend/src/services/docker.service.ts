@@ -59,8 +59,15 @@ async function createContainer(settings: ServerSettingsS, manifest: GameManifest
         }
     });
 
-    await container.start();
+    // created only , the caller decides when to start it
     return container.id;
+}
+
+// env and resource limits are baked in at creation, so applying changed settings means
+// replacing the container , the /data named volume is untouched by container.remove()
+async function recreateContainer(settings: ServerSettingsS, manifest: GameManifestS): Promise<string> {
+    await deleteContainer(settings.core_settings.container_id);
+    return createContainer(settings, manifest);
 }
 
 async function deleteContainer(containerId:string): Promise<void>{
@@ -205,4 +212,4 @@ async function watchContainerEvents(db: DbService): Promise<void> {
     });
 }
 
-export {createContainer, startContainer, stopContainer, deleteContainer, watchContainerEvents, getDockerStats};
+export {createContainer, recreateContainer, startContainer, stopContainer, deleteContainer, watchContainerEvents, getDockerStats};
