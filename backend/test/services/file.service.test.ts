@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
     stat: vi.fn(),
     readdir: vi.fn(),
     rm: vi.fn(),
+    mkdir: vi.fn(),
   },
 }))
 
@@ -18,7 +19,7 @@ vi.mock('fs/promises', () => ({
   default: mocks.fs,
 }))
 
-import { listDirectory, deleteEntry } from '../../src/services/file.service.js'
+import { listDirectory, deleteEntry, prepareUploadTarget } from '../../src/services/file.service.js'
 
 function serverWith(manager_password: string | null): ServerSettingsS {
   return {
@@ -86,6 +87,37 @@ describe('listDirectory', () => {
 
   it('throws on an out-of-range volume index', async () => {
     await expect(listDirectory(serverWith(null), 'vol9')).rejects.toThrow('out of range')
+  })
+})
+
+describe('prepareUploadTarget', () => {
+  beforeEach(() => {
+    mocks.fs.mkdir.mockResolvedValue(undefined)
+  })
+
+  it('keeps a plain file directly in the target directory', async () => {
+    const dest = await prepareUploadTarget('/vol/a', 'mod.jar')
+
+    expect(dest).toBe('/vol/a/mod.jar')
+    expect(mocks.fs.mkdir).toHaveBeenCalledWith('/vol/a', { recursive: true })
+  })
+
+  it('recreates the folder structure of an uploaded folder', async () => {
+    const dest = await prepareUploadTarget('/vol/a', 'pack/config/opts.toml')
+
+    expect(dest).toBe('/vol/a/pack/config/opts.toml')
+    expect(mocks.fs.mkdir).toHaveBeenCalledWith('/vol/a/pack/config', { recursive: true })
+  })
+
+  it('strips traversal segments from the relative name', async () => {
+    const dest = await prepareUploadTarget('/vol/a', '../../etc/passwd')
+
+    expect(dest).toBe('/vol/a/etc/passwd')
+  })
+
+  it('rejects a name with no usable segments', async () => {
+    await expect(prepareUploadTarget('/vol/a', '../..')).rejects.toThrow('Invalid upload file name')
+    expect(mocks.fs.mkdir).not.toHaveBeenCalled()
   })
 })
 

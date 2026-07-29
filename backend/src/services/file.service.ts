@@ -80,3 +80,15 @@ export async function resolveUploadDir(server: ServerSettingsS, relPath: string)
     }
     return resolved;
 }
+
+// Uploaded folders arrive as files named by their relative path.
+export async function prepareUploadTarget(dir: string, relName: string): Promise<string> {
+    const segments = relName.split(/[\\/]/).filter(s => s && s !== "." && s !== "..");
+    if (segments.length === 0) {
+        throw new Error("Invalid upload file name");
+    }
+
+    const dest = path.join(dir, ...segments);
+    await fs.mkdir(path.dirname(dest), { recursive: true });
+    return dest;
+}

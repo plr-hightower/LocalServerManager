@@ -14,7 +14,13 @@ const FileRequestBaseSchema = CoreServerSettingsSchema
 
 export const FileListRequestSchema = FileRequestBaseSchema;
 export const FileDeleteRequestSchema = FileRequestBaseSchema;
-export const FileUploadFieldsSchema = FileRequestBaseSchema;
+
+// One path per uploaded file, in order; a single entry arrives as a bare string.
+export const FileUploadFieldsSchema = FileRequestBaseSchema.extend({
+    paths: z.union([FilePathSchema, z.array(FilePathSchema)])
+        .default([])
+        .transform(p => Array.isArray(p) ? p : [p]),
+});
 
 export const FileEntrySchema = z.object({
     name: z.string(),

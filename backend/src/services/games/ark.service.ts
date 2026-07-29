@@ -1,5 +1,6 @@
 import { IGameService } from "../../interfaces/IGameService.js";
 import { GameManifestS, GameManifestSchema, ServerSettingsS, ArkSettingsS } from "@hightower/shared";
+import { firstFreePort } from "../serverHelper.service.js";
 
 export const GameService: IGameService = {
 
@@ -37,11 +38,6 @@ export const GameService: IGameService = {
 
     getDefaultPort: (): string => '7777',
 
-    getHostPort: (numberOfGameServers: number): number => {
-        const port = 7777 + (numberOfGameServers * 2);
-        if (port > 65535) {
-            throw new Error("New host port exceeds the max port count");
-        }
-        return port;
-    }
+    // ark binds host_port plus its query/RCON ports at fixed offsets
+    getHostPort: (usedPorts: Set<number>): number => firstFreePort(7777, 2, usedPorts, [0, 1, 27015 - 7777]),
 };
