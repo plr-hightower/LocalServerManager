@@ -791,6 +791,43 @@ describe('recreateServer', () => {
     expect(passed.core_settings.name).toBe('test-server')
   })
 
+  it('is not blocked by the total server cap', async () => {
+    makeDbMock({
+      getServerByName: vi.fn().mockResolvedValue(stoppedServer),
+      countServers: vi.fn().mockResolvedValue(40),
+    })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({ name: 'test-server', password: 'secret' }), res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('is not blocked by the creation rate limit', async () => {
+    makeDbMock({
+      getServerByName: vi.fn().mockResolvedValue(stoppedServer),
+      countServersSince: vi.fn().mockResolvedValue(99),
+    })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({ name: 'test-server', password: 'secret' }), res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('does not consume the creation rate budget', async () => {
+    const db = makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({ name: 'test-server', password: 'secret' }), res)
+
+    expect(db.logNewServer).not.toHaveBeenCalled()
+    expect(db.countServersSince).not.toHaveBeenCalled()
+  })
+
   it('returns 500 and keeps the old container id when recreate throws', async () => {
     const db = makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
     vi.mocked(dockerService.recreateContainer).mockRejectedValue(new Error('Docker error'))
