@@ -145,6 +145,21 @@ export class DbService {
         );
     }
 
+    async updateServerSettings(server_id: number, server: ServerSettingsS): Promise<void> {
+        const { core_settings, game_settings } = server;
+        await pool.execute(
+            "UPDATE servers SET game_settings = ?, ram_alloc_mb = ?, max_num_players = ? WHERE server_id = ?",
+            [JSON.stringify(game_settings), core_settings.ram_alloc_mb, core_settings.max_num_players, server_id]
+        );
+    }
+
+    async updateContainerId(server_id: number, containerId: string): Promise<void> {
+        await pool.execute(
+            "UPDATE servers SET container_id = ? WHERE server_id = ?",
+            [containerId, server_id]
+        );
+    }
+
     async updateServerStatusByContainerId(containerId: string, status: StatusE): Promise<void> {
         await pool.execute(
             "UPDATE servers SET status = ? WHERE container_id = ?",

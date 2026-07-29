@@ -59,8 +59,16 @@ async function createContainer(settings: ServerSettingsS, manifest: GameManifest
         }
     });
 
-    await container.start();
     return container.id;
+}
+
+async function recreateContainer(settings: ServerSettingsS, manifest: GameManifestS): Promise<string> {
+    try {
+        await deleteContainer(settings.core_settings.name);
+    } catch (err: unknown) {
+        if ((err as { statusCode?: number }).statusCode !== 404) throw err;
+    }
+    return createContainer(settings, manifest);
 }
 
 async function deleteContainer(containerId:string): Promise<void>{
@@ -205,4 +213,4 @@ async function watchContainerEvents(db: DbService): Promise<void> {
     });
 }
 
-export {createContainer, startContainer, stopContainer, deleteContainer, watchContainerEvents, getDockerStats};
+export {createContainer, recreateContainer, startContainer, stopContainer, deleteContainer, watchContainerEvents, getDockerStats};

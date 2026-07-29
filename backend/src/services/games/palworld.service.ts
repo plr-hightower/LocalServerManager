@@ -40,4 +40,6 @@ export const GameService: IGameService = {
     getDefaultPort: (): string => '8211',
 
     getHostPort: (usedPorts: Set<number>): number => firstFreePort(8211, 1, usedPorts),
+
+    getMaxPlayers: (): number | null => null,
 };

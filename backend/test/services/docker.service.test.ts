@@ -33,6 +33,7 @@ vi.mock('../../src/repository/db.repository.js', () => ({
 
 import {
   createContainer,
+  recreateContainer,
   deleteContainer,
   startContainer,
   stopContainer,
@@ -129,9 +130,14 @@ describe('createContainer', () => {
     expect(call.HostConfig.Memory).toBe(4096 * 1024 * 1024)
   })
 
-  it('calls container.start() after creating', async () => {
+  it('does not start the container', async () => {
     await createContainer(baseServer, baseManifest)
-    expect(mocks.container.start).toHaveBeenCalledOnce()
+    expect(mocks.container.start).not.toHaveBeenCalled()
+  })
+
+  it('still returns the new container id', async () => {
+    const id = await createContainer(baseServer, baseManifest)
+    expect(id).toBe(mocks.container.id)
   })
 
   it('binds the correct host port', async () => {
@@ -171,6 +177,61 @@ describe('deleteContainer', () => {
   it('calls docker.getContainer with the provided ID', async () => {
     await deleteContainer('some-id')
     expect(mocks.dockerInstance.getContainer).toHaveBeenCalledWith('some-id')
+  })
+})
+
+describe('recreateContainer', () => {
+  it('removes the old container then creates a new one', async () => {
+    await recreateContainer(baseServer, baseManifest)
+    expect(mocks.container.remove).toHaveBeenCalledOnce()
+    expect(mocks.dockerInstance.createContainer).toHaveBeenCalledOnce()
+  })
+
+  it('targets the container by server name so a stale id cannot block a retry', async () => {
+    await recreateContainer(baseServer, baseManifest)
+    expect(mocks.dockerInstance.getContainer).toHaveBeenCalledWith(baseServer.core_settings.name)
+  })
+
+  it('returns the new container id', async () => {
+    const id = await recreateContainer(baseServer, baseManifest)
+    expect(id).toBe(mocks.container.id)
+  })
+
+  it('does not start the replacement', async () => {
+    await recreateContainer(baseServer, baseManifest)
+    expect(mocks.container.start).not.toHaveBeenCalled()
+  })
+
+  it('reuses the same volume bind so the world survives', async () => {
+    await recreateContainer(baseServer, baseManifest)
+    const call = mocks.dockerInstance.createContainer.mock.calls[0][0]
+    expect(call.HostConfig.Binds).toContain('test-server:/data')
+  })
+
+  it('never passes v:true to remove, which would delete the world volume', async () => {
+    await recreateContainer(baseServer, baseManifest)
+    const removeArg = mocks.container.remove.mock.calls[0]?.[0]
+    expect(removeArg?.v).not.toBe(true)
+  })
+
+  it('does not create a replacement if removing the old one fails', async () => {
+    mocks.container.stop.mockRejectedValue(Object.assign(new Error('boom'), { statusCode: 500 }))
+    await expect(recreateContainer(baseServer, baseManifest)).rejects.toThrow('boom')
+    expect(mocks.dockerInstance.createContainer).not.toHaveBeenCalled()
+  })
+
+  it('still creates a replacement when the old container is already gone', async () => {
+    mocks.container.stop.mockRejectedValue(Object.assign(new Error('no such container'), { statusCode: 404 }))
+    const id = await recreateContainer(baseServer, baseManifest)
+    expect(id).toBe(mocks.container.id)
+    expect(mocks.dockerInstance.createContainer).toHaveBeenCalledOnce()
+  })
+
+  it('still creates a replacement when remove reports the container is gone', async () => {
+    mocks.container.remove.mockRejectedValue(Object.assign(new Error('no such container'), { statusCode: 404 }))
+    const id = await recreateContainer(baseServer, baseManifest)
+    expect(id).toBe(mocks.container.id)
+    expect(mocks.dockerInstance.createContainer).toHaveBeenCalledOnce()
   })
 })
 

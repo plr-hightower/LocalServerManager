@@ -70,6 +70,19 @@ export const useServerStore = defineStore('servers', () => {
         await fetchServers();
     }
 
+    async function recreate(
+        server: ServerSettingsS,
+        password: string,
+        changes: { game_settings?: ServerSettingsS['game_settings']; ram_alloc_mb?: number } = {},
+    ) {
+        await api.post('/server/recreateServer', {
+            name: server.core_settings.name,
+            password,
+            ...changes,
+        });
+        await fetchServers();
+    }
+
     async function changeStatus(server: ServerSettingsS, action: StatusE) {
         await api.post<{ success: boolean }>('/server/status', {
             name: server.core_settings.name,
@@ -96,6 +109,7 @@ export const useServerStore = defineStore('servers', () => {
         fetchServers,
         create,
         remove,
+        recreate,
         changeStatus,
         fetchHealth,
         visibleServers,
