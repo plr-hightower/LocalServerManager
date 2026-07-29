@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { NextFunction, Request,Response } from "express";
 import { serverController } from "../controllers/server.controller.js";
-import { CreateServerRequestSchema, DeleteServerRequestSchema, ServerActionSchema, ServerSettingsSchema } from "@hightower/shared";
+import { CreateServerRequestSchema, DeleteServerRequestSchema, RecreateServerRequestSchema, ServerActionSchema, ServerSettingsSchema } from "@hightower/shared";
 import { validate } from "../services/validate.service.js";
 
 const router:Router = Router();
@@ -10,6 +10,8 @@ const router:Router = Router();
 router.post("/buildServer" , validate(CreateServerRequestSchema), serverController.buildServer);
 
 router.post("/deleteServer", validate(DeleteServerRequestSchema), serverController.deleteServer);
+
+router.post("/recreateServer", validate(RecreateServerRequestSchema), serverController.recreateServer);
 
 router.post("/status", validate(ServerActionSchema), serverController.changeServerStatus);
 

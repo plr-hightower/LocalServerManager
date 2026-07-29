@@ -8,6 +8,25 @@
 
 ### Changed
 
+## [0.5.1] 28 July 2026
+
+### Added
+- Forge, NeoForge and Quilt server types.
+- Selectable Java version.
+- Loader version pinning.
+- Recreate server, keeps the world.
+- Apply Settings button to edit an existing server.
+
+### Fixed
+- Heap now follows the allocated RAM instead of the image default of 1GB.
+- Older servers no longer break on new settings.
+- Retrying a failed recreate no longer conflicts.
+- Max players no longer drifts.
+
+### Changed
+- Creating a server no longer starts it.
+- Image tag follows the Java version.
+
 ## [0.5.0] 28 July 2026
 
 ### Added

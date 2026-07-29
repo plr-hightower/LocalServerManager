@@ -1,10 +1,10 @@
 import type { NextFunction, Request,Response } from "express";
 
 import { IGameService } from "../interfaces/IGameService.js";
-import { CreateServerRequestS, CreateServerRequestSchema, DeleteServerRequestS, DeleteServerRequestSchema, GameManifestS, HealthCheckResponseS, HealthCheckResponseSchema, ServerActionSchema, ServerSettingsS, ServerSettingsSchema, StatusE, StatusEnum } from '@hightower/shared';
+import { CoreServerSettingsS, CreateServerRequestS, CreateServerRequestSchema, DeleteServerRequestS, DeleteServerRequestSchema, GameManifestS, HealthCheckResponseS, HealthCheckResponseSchema, RecreateServerRequestS, RecreateServerRequestSchema, ServerActionSchema, ServerSettingsS, ServerSettingsSchema, StatusE, StatusEnum } from '@hightower/shared';
 import { DbService } from "../repository/db.repository.js";
 import { success, ZodError } from "zod";
-import { createContainer, deleteContainer, getDockerStats, startContainer, stopContainer, reconcileStatuses } from "../services/docker.service.js";
+import { createContainer, recreateContainer, deleteContainer, getDockerStats, startContainer, stopContainer, reconcileStatuses } from "../services/docker.service.js";
 import { getGameService, getManifest, getOccupiedPorts } from "../services/game.service.js";
 import { hashManagerPassword, verifyManagerPassword, isMasterPassword } from "../services/password.service.js";
 import { hasEnoughRam } from "../services/serverHelper.service.js";
@@ -27,7 +27,7 @@ const buildServer = async (req:Request, res:Response) => {
         core_settings: {
             ...requestSettings.core_settings,
             container_id: "NOT GENERATED",
-            status: "starting",
+            status: "stopped",
             created_at: new Date(),
             host_port: null,
             default_host_port: "NOT IMPLEMENTED",
@@ -204,6 +204,88 @@ const deleteServer = async (req:Request, res:Response) => {
     }
 }
 
+const ACTIVE_STATUSES: StatusE[] = ["started", "starting"];
+
+async function canFitRam(db: DbService, core: CoreServerSettingsS, requestedMb: number): Promise<boolean> {
+    const ownActiveMb = ACTIVE_STATUSES.includes(core.status) ? core.ram_alloc_mb : 0;
+    return hasEnoughRam(requestedMb, await db.sumRamAllocForActiveServers() - ownActiveMb);
+}
+
+const recreateServer = async (req: Request, res: Response) => {
+    try {
+        const request: RecreateServerRequestS = RecreateServerRequestSchema.parse(req.body);
+        const db: DbService = new DbService();
+
+        const serverSettings: ServerSettingsS | null = await db.getServerByName(request.name);
+        const serverId = serverSettings?.core_settings.server_id;
+        if (!serverSettings || serverId === undefined) {
+            return res.status(404).json({ error: "Server not found" });
+        }
+        const stored = serverSettings.core_settings;
+
+        if (!await verifyManagerPassword(serverSettings, request.password)) {
+            return res.status(401).json({ error: "Invalid password" });
+        }
+
+        const settingsChanged = request.game_settings !== undefined || request.ram_alloc_mb !== undefined;
+
+        const gameSettings = request.game_settings ?? serverSettings.game_settings;
+        if (gameSettings.game !== stored.game_container) {
+            return res.status(400).json({
+                error: `Settings are for "${gameSettings.game}" but this server is "${stored.game_container}"`,
+            });
+        }
+
+        const ramAllocMb = request.ram_alloc_mb ?? stored.ram_alloc_mb;
+        if (ramAllocMb !== stored.ram_alloc_mb && !await canFitRam(db, stored, ramAllocMb)) {
+            return res.status(400).json({ error: "Not enough RAM available for the requested allocation." });
+        }
+
+        const gameService = await getGameService(serverSettings);
+
+        const hostPort = stored.host_port
+            ?? gameService.getHostPort(await getOccupiedPorts(await db.getAllServers()));
+
+        const maxPlayers = gameService.getMaxPlayers(gameSettings) ?? stored.max_num_players;
+
+        const settings: ServerSettingsS = {
+            core_settings: {
+                ...stored,
+                ram_alloc_mb: ramAllocMb,
+                max_num_players: maxPlayers,
+                default_host_port: gameService.getDefaultPort(),
+                host_port: hostPort,
+            },
+            game_settings: gameSettings,
+        };
+
+        const manifest: GameManifestS = await gameService.getGameManifest(settings);
+
+        logger.info({ name: request.name, image: manifest.image, settingsChanged }, "Recreating server container");
+        const containerId = await recreateContainer(settings, manifest);
+
+        if (settingsChanged) {
+            await db.updateServerSettings(serverId, settings);
+        }
+        await db.updateContainerId(serverId, containerId);
+        await db.updateServerStatus(serverId, "stopped");
+
+        return res.status(200).json({ success: true, container_id: containerId });
+
+    } catch (err: unknown) {
+        logger.error({ err }, "Failed to recreate server");
+
+        if (err instanceof ZodError) {
+            return res.status(400).json({ error: "Invalid request body.", details: err.issues });
+        }
+
+        res.status(500).json({
+            error: "Failed to recreate server",
+            details: err instanceof Error ? err.message : err,
+        });
+    }
+}
+
 const getServerList = async (req:Request, res:Response) => {
     try {
         logger.info("Getting the server list.");
@@ -235,6 +317,7 @@ export const serverController = {
     changeServerStatus,
     buildServer,
     deleteServer,
+    recreateServer,
     getServerList,
     getHealthCheck
 }

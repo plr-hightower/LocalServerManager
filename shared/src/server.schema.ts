@@ -26,8 +26,10 @@ export const CoreServerSettingsSchema = z.object({
 export const MinecraftSettingsSchema = z.object({
     game: z.literal("minecraft"),
     EULA: z.literal("TRUE").default("TRUE"),
-    TYPE: z.enum(["VANILLA","PAPER","FABRIC"]).default("FABRIC"),
+    TYPE: z.enum(["VANILLA","PAPER","FABRIC","FORGE","NEOFORGE","QUILT"]).default("FABRIC"),
     VERSION: z.string().default("LATEST"),
+    JAVA_VERSION: z.enum(["8","11","16","17","21","25"]).default("21"),
+    LOADER_VERSION: z.string().default("LATEST"),
 
     //Message of the day (whats below the server name)
     MOTD: z.string().max(59).default("A Minecraft Server"),
@@ -183,6 +185,14 @@ export const DeleteServerRequestSchema = CoreServerSettingsSchema
     .extend({ password: z.string().min(1, "Password is required") });
 
 
+export const RecreateServerRequestSchema = CoreServerSettingsSchema
+    .pick({ name: true })
+    .extend({
+        password: z.string().min(1, "Password is required"),
+        game_settings: GameSettingsSchema.optional(),
+        ram_alloc_mb: RamAllocMbEnum.optional(),
+    });
+
 export const ServerActionSchema = z.object({
     name: z.string(),
     action: StatusEnum,
@@ -200,8 +210,10 @@ export type StatusE = z.infer<typeof StatusEnum>;
 export type CoreServerSettingsS = z.infer<typeof CoreServerSettingsSchema>;
 export type CreateServerRequestS = z.infer<typeof CreateServerRequestSchema>;
 export type DeleteServerRequestS = z.infer<typeof DeleteServerRequestSchema>;
+export type RecreateServerRequestS = z.infer<typeof RecreateServerRequestSchema>;
 export type ServerSettingsS = z.infer<typeof ServerSettingsSchema>;
 export type ServerActionS = z.infer<typeof ServerActionSchema>;
+export type GameSettingsS = z.infer<typeof GameSettingsSchema>;
 export type ValheimSettingsS = z.infer<typeof ValheimSettingsSchema>;
 export type MinecraftSettingsS = z.infer<typeof MinecraftSettingsSchema>;
 export type PalworldSettingsS = z.infer<typeof PalworldSettingsSchema>;
