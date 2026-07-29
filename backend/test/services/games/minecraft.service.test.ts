@@ -29,7 +29,6 @@ const baseServer: ServerSettingsS = {
   },
 }
 
-// builds a variant of baseServer with the given minecraft settings overridden
 const withSettings = (over: Partial<MinecraftSettingsS>): ServerSettingsS => ({
   ...baseServer,
   game_settings: { ...baseServer.game_settings, ...over } as MinecraftSettingsS,

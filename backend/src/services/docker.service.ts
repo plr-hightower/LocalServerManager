@@ -59,14 +59,15 @@ async function createContainer(settings: ServerSettingsS, manifest: GameManifest
         }
     });
 
-    // created only , the caller decides when to start it
     return container.id;
 }
 
-// env and resource limits are baked in at creation, so applying changed settings means
-// replacing the container , the /data named volume is untouched by container.remove()
 async function recreateContainer(settings: ServerSettingsS, manifest: GameManifestS): Promise<string> {
-    await deleteContainer(settings.core_settings.container_id);
+    try {
+        await deleteContainer(settings.core_settings.name);
+    } catch (err: unknown) {
+        if ((err as { statusCode?: number }).statusCode !== 404) throw err;
+    }
     return createContainer(settings, manifest);
 }
 

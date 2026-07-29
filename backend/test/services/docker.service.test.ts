@@ -187,9 +187,9 @@ describe('recreateContainer', () => {
     expect(mocks.dockerInstance.createContainer).toHaveBeenCalledOnce()
   })
 
-  it('targets the stored container id for removal', async () => {
+  it('targets the container by server name so a stale id cannot block a retry', async () => {
     await recreateContainer(baseServer, baseManifest)
-    expect(mocks.dockerInstance.getContainer).toHaveBeenCalledWith(baseServer.core_settings.container_id)
+    expect(mocks.dockerInstance.getContainer).toHaveBeenCalledWith(baseServer.core_settings.name)
   })
 
   it('returns the new container id', async () => {
@@ -218,6 +218,20 @@ describe('recreateContainer', () => {
     mocks.container.stop.mockRejectedValue(Object.assign(new Error('boom'), { statusCode: 500 }))
     await expect(recreateContainer(baseServer, baseManifest)).rejects.toThrow('boom')
     expect(mocks.dockerInstance.createContainer).not.toHaveBeenCalled()
+  })
+
+  it('still creates a replacement when the old container is already gone', async () => {
+    mocks.container.stop.mockRejectedValue(Object.assign(new Error('no such container'), { statusCode: 404 }))
+    const id = await recreateContainer(baseServer, baseManifest)
+    expect(id).toBe(mocks.container.id)
+    expect(mocks.dockerInstance.createContainer).toHaveBeenCalledOnce()
+  })
+
+  it('still creates a replacement when remove reports the container is gone', async () => {
+    mocks.container.remove.mockRejectedValue(Object.assign(new Error('no such container'), { statusCode: 404 }))
+    const id = await recreateContainer(baseServer, baseManifest)
+    expect(id).toBe(mocks.container.id)
+    expect(mocks.dockerInstance.createContainer).toHaveBeenCalledOnce()
   })
 })
 

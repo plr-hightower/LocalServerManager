@@ -70,11 +70,15 @@ export const useServerStore = defineStore('servers', () => {
         await fetchServers();
     }
 
-    // replaces the container so changed settings apply , world volume is kept
-    async function recreate(server: ServerSettingsS, password: string) {
+    async function recreate(
+        server: ServerSettingsS,
+        password: string,
+        changes: { game_settings?: ServerSettingsS['game_settings']; ram_alloc_mb?: number } = {},
+    ) {
         await api.post('/server/recreateServer', {
             name: server.core_settings.name,
             password,
+            ...changes,
         });
         await fetchServers();
     }

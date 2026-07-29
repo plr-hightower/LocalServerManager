@@ -33,6 +33,8 @@ vi.mock('../../src/services/games/minecraft.service.js', () => ({
     }),
     getDefaultPort: vi.fn().mockReturnValue('25565'),
     getHostPort: vi.fn().mockReturnValue(25566),
+    getMaxPlayers: vi.fn((gs: { game: string; MAX_PLAYERS?: number }) =>
+      gs.game === 'minecraft' ? gs.MAX_PLAYERS ?? null : null),
   },
 }))
 
@@ -63,6 +65,7 @@ function makeDbMock(overrides: Partial<InstanceType<typeof DbService>> = {}) {
     getServersByStatus: vi.fn().mockResolvedValue([]),
     updateServerStatus: vi.fn().mockResolvedValue(undefined),
     updateContainerId: vi.fn().mockResolvedValue(undefined),
+    updateServerSettings: vi.fn().mockResolvedValue(undefined),
     deleteServerRow: vi.fn().mockResolvedValue(true),
     getServerList: vi.fn().mockResolvedValue([]),
     countServers: vi.fn().mockResolvedValue(0),
@@ -667,6 +670,125 @@ describe('recreateServer', () => {
 
     const passedSettings = vi.mocked(dockerService.recreateContainer).mock.calls[0][0]
     expect(passedSettings.core_settings.host_port).toBe(25566)
+  })
+
+  it('rebuilds with stored settings and persists nothing when no changes are sent', async () => {
+    const db = makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({ name: 'test-server', password: 'secret' }), res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(db.updateServerSettings).not.toHaveBeenCalled()
+  })
+
+  it('applies submitted game_settings to the rebuilt container', async () => {
+    makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const game_settings = { ...stoppedServer.game_settings, TYPE: 'FORGE', VERSION: '1.19.2' }
+    const res = mockRes()
+    await serverController.recreateServer(
+      mockReq({ name: 'test-server', password: 'secret', game_settings }), res)
+
+    const passed = vi.mocked(dockerService.recreateContainer).mock.calls[0][0]
+    expect(passed.game_settings).toMatchObject({ TYPE: 'FORGE', VERSION: '1.19.2' })
+  })
+
+  it('persists submitted game_settings', async () => {
+    const db = makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const game_settings = { ...stoppedServer.game_settings, TYPE: 'FORGE' }
+    const res = mockRes()
+    await serverController.recreateServer(
+      mockReq({ name: 'test-server', password: 'secret', game_settings }), res)
+
+    expect(db.updateServerSettings).toHaveBeenCalledOnce()
+    expect(db.updateServerSettings.mock.calls[0][1].game_settings).toMatchObject({ TYPE: 'FORGE' })
+  })
+
+  it('rejects settings belonging to a different game', async () => {
+    const db = makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({
+      name: 'test-server', password: 'secret',
+      game_settings: { game: 'valheim', SERVER_PASS: 'hunter2' },
+    }), res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(dockerService.recreateContainer).not.toHaveBeenCalled()
+    expect(db.updateServerSettings).not.toHaveBeenCalled()
+  })
+
+  it('applies a new ram_alloc_mb', async () => {
+    const db = makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const res = mockRes()
+    await serverController.recreateServer(
+      mockReq({ name: 'test-server', password: 'secret', ram_alloc_mb: 8192 }), res)
+
+    const passed = vi.mocked(dockerService.recreateContainer).mock.calls[0][0]
+    expect(passed.core_settings.ram_alloc_mb).toBe(8192)
+    expect(db.updateServerSettings.mock.calls[0][1].core_settings.ram_alloc_mb).toBe(8192)
+  })
+
+  it('rejects a ram_alloc_mb the host cannot fit', async () => {
+    const db = makeDbMock({
+      getServerByName: vi.fn().mockResolvedValue(stoppedServer),
+      sumRamAllocForActiveServers: vi.fn().mockResolvedValue(15000),
+    })
+
+    const res = mockRes()
+    await serverController.recreateServer(
+      mockReq({ name: 'test-server', password: 'secret', ram_alloc_mb: 8192 }), res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(dockerService.recreateContainer).not.toHaveBeenCalled()
+    expect(db.updateServerSettings).not.toHaveBeenCalled()
+  })
+
+  it('does not double count a running server own allocation', async () => {
+    makeDbMock({
+      getServerByName: vi.fn().mockResolvedValue(startedServer),
+      sumRamAllocForActiveServers: vi.fn().mockResolvedValue(startedServer.core_settings.ram_alloc_mb),
+    })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const res = mockRes()
+    await serverController.recreateServer(
+      mockReq({ name: 'test-server', password: 'secret', ram_alloc_mb: 8192 }), res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('syncs max_num_players from MAX_PLAYERS', async () => {
+    const db = makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const game_settings = { ...stoppedServer.game_settings, MAX_PLAYERS: 3 }
+    const res = mockRes()
+    await serverController.recreateServer(
+      mockReq({ name: 'test-server', password: 'secret', game_settings }), res)
+
+    expect(db.updateServerSettings.mock.calls[0][1].core_settings.max_num_players).toBe(3)
+  })
+
+  it('ignores a submitted name change by keying off the stored server', async () => {
+    makeDbMock({ getServerByName: vi.fn().mockResolvedValue(stoppedServer) })
+    vi.mocked(dockerService.recreateContainer).mockResolvedValue('b'.repeat(64))
+
+    const res = mockRes()
+    await serverController.recreateServer(mockReq({
+      name: 'test-server', password: 'secret', core_settings: { name: 'renamed' },
+    }), res)
+
+    const passed = vi.mocked(dockerService.recreateContainer).mock.calls[0][0]
+    expect(passed.core_settings.name).toBe('test-server')
   })
 
   it('returns 500 and keeps the old container id when recreate throws', async () => {

@@ -28,9 +28,7 @@ export const MinecraftSettingsSchema = z.object({
     EULA: z.literal("TRUE").default("TRUE"),
     TYPE: z.enum(["VANILLA","PAPER","FABRIC","FORGE","NEOFORGE","QUILT"]).default("FABRIC"),
     VERSION: z.string().default("LATEST"),
-    // Forge 1.19.2 needs 17, Fabric on 1.20.5+ needs 21
     JAVA_VERSION: z.enum(["8","11","16","17","21","25"]).default("21"),
-    // loader/installer build, LATEST lets the image pick , ignored by VANILLA and PAPER
     LOADER_VERSION: z.string().default("LATEST"),
 
     //Message of the day (whats below the server name)
@@ -187,10 +185,13 @@ export const DeleteServerRequestSchema = CoreServerSettingsSchema
     .extend({ password: z.string().min(1, "Password is required") });
 
 
-// replaces the container so changed settings take effect , keeps the world volume
 export const RecreateServerRequestSchema = CoreServerSettingsSchema
     .pick({ name: true })
-    .extend({ password: z.string().min(1, "Password is required") });
+    .extend({
+        password: z.string().min(1, "Password is required"),
+        game_settings: GameSettingsSchema.optional(),
+        ram_alloc_mb: RamAllocMbEnum.optional(),
+    });
 
 export const ServerActionSchema = z.object({
     name: z.string(),
@@ -212,6 +213,7 @@ export type DeleteServerRequestS = z.infer<typeof DeleteServerRequestSchema>;
 export type RecreateServerRequestS = z.infer<typeof RecreateServerRequestSchema>;
 export type ServerSettingsS = z.infer<typeof ServerSettingsSchema>;
 export type ServerActionS = z.infer<typeof ServerActionSchema>;
+export type GameSettingsS = z.infer<typeof GameSettingsSchema>;
 export type ValheimSettingsS = z.infer<typeof ValheimSettingsSchema>;
 export type MinecraftSettingsS = z.infer<typeof MinecraftSettingsSchema>;
 export type PalworldSettingsS = z.infer<typeof PalworldSettingsSchema>;

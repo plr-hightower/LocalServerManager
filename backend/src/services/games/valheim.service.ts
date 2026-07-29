@@ -32,4 +32,6 @@ export const GameService: IGameService = {
 
     // valheim binds host_port and host_port+1
     getHostPort: (usedPorts: Set<number>): number => firstFreePort(7000, 2, usedPorts, [0, 1]),
+
+    getMaxPlayers: (): number | null => null,
 };
