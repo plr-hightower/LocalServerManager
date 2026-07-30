@@ -8,6 +8,14 @@
 
 ### Changed
 
+## [0.5.5] 29 July 2026
+
+### Added
+
+### Fixed
+
+### Changed
+
 ## [0.5.4] 29 July 2026
 
 ### Added
