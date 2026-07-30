@@ -5,6 +5,7 @@
 ### Added
 
 ### Fixed
+- File size to large to upload
 
 ### Changed
 
