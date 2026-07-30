@@ -5,7 +5,8 @@ import { validate } from '../services/validate.service.js';
 import { FileListRequestSchema, FileDeleteRequestSchema } from '@hightower/shared';
 import { fileController } from '../controllers/file.controller.js';
 
-const upload = multer({ dest: os.tmpdir(), limits: { fileSize: 1024 * 1024 * 1024 } });
+const maxUploadFileMb = Number(process.env.MAX_UPLOAD_FILE_MB ?? 32768);
+const upload = multer({ dest: os.tmpdir(), limits: { fileSize: maxUploadFileMb * 1024 * 1024 } });
 const router = Router();
 
 router.post("/list", validate(FileListRequestSchema), fileController.listFiles);
