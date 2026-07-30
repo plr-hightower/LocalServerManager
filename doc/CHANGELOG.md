@@ -5,6 +5,7 @@
 ### Added
 
 ### Fixed
+- Image for specific minecraft does not load at runtime, fixed.
 
 ### Changed
 
