@@ -19,6 +19,8 @@ const mocks = vi.hoisted(() => {
     createContainer: vi.fn().mockResolvedValue(container),
     listContainers: vi.fn().mockResolvedValue([]),
     getEvents: vi.fn(),
+    pull: vi.fn().mockResolvedValue('mock-pull-stream'),
+    modem: { followProgress: vi.fn((_stream: unknown, done: (err: Error | null) => void) => done(null)) },
   }
   return { container, image, dockerInstance }
 })
@@ -34,6 +36,7 @@ vi.mock('../../src/repository/db.repository.js', () => ({
 import {
   createContainer,
   recreateContainer,
+  ensureImage,
   deleteContainer,
   startContainer,
   stopContainer,
@@ -177,6 +180,50 @@ describe('deleteContainer', () => {
   it('calls docker.getContainer with the provided ID', async () => {
     await deleteContainer('some-id')
     expect(mocks.dockerInstance.getContainer).toHaveBeenCalledWith('some-id')
+  })
+})
+
+describe('ensureImage', () => {
+  it('does not pull when the image is already present', async () => {
+    mocks.image.inspect.mockResolvedValue({})
+    await ensureImage('itzg/minecraft-server:2026.7.0-java17')
+    expect(mocks.dockerInstance.pull).not.toHaveBeenCalled()
+  })
+
+  it('pulls the missing image', async () => {
+    mocks.image.inspect.mockRejectedValue(Object.assign(new Error('no such image'), { statusCode: 404 }))
+    await ensureImage('itzg/minecraft-server:2026.7.0-java17')
+    expect(mocks.dockerInstance.pull).toHaveBeenCalledWith('itzg/minecraft-server:2026.7.0-java17')
+  })
+
+  it('waits for the pull to finish', async () => {
+    mocks.image.inspect.mockRejectedValue(new Error('no such image'))
+    await ensureImage('some/image:tag')
+    expect(mocks.dockerInstance.modem.followProgress).toHaveBeenCalledOnce()
+  })
+
+  it('rejects when the pull fails', async () => {
+    mocks.image.inspect.mockRejectedValue(new Error('no such image'))
+    mocks.dockerInstance.modem.followProgress.mockImplementationOnce(
+      (_s: unknown, done: (err: Error | null) => void) => done(new Error('registry unreachable')))
+    await expect(ensureImage('some/image:tag')).rejects.toThrow('registry unreachable')
+  })
+})
+
+describe('createContainer image handling', () => {
+  it('pulls a missing image before creating', async () => {
+    mocks.image.inspect.mockRejectedValue(new Error('no such image'))
+    await createContainer(baseServer, baseManifest)
+    expect(mocks.dockerInstance.pull).toHaveBeenCalledWith(baseManifest.image)
+    expect(mocks.dockerInstance.createContainer).toHaveBeenCalledOnce()
+  })
+
+  it('does not create the container when the pull fails', async () => {
+    mocks.image.inspect.mockRejectedValue(new Error('no such image'))
+    mocks.dockerInstance.modem.followProgress.mockImplementationOnce(
+      (_s: unknown, done: (err: Error | null) => void) => done(new Error('registry unreachable')))
+    await expect(createContainer(baseServer, baseManifest)).rejects.toThrow('registry unreachable')
+    expect(mocks.dockerInstance.createContainer).not.toHaveBeenCalled()
   })
 })
 

@@ -16,10 +16,21 @@ async function imageExists(image:string): Promise<boolean>{
         return false;
     }
 }
+async function ensureImage(image: string): Promise<void> {
+    if (await imageExists(image)) return;
+
+    const stream = await docker.pull(image);
+    await new Promise<void>((resolve, reject) => {
+        docker.modem.followProgress(stream, err => err ? reject(err) : resolve());
+    });
+}
+
 async function createContainer(settings: ServerSettingsS, manifest: GameManifestS): Promise<string> {
     if (!settings.core_settings.default_host_port || !settings.core_settings.host_port) {
         throw new Error("core_settings default hostport not set");
     }
+
+    await ensureImage(manifest.image);
 
     const ExposedPorts: Record<string, {}> = {};
     const PortBindings: Record<string, Array<{ HostPort: string }>> = {};
@@ -213,4 +224,4 @@ async function watchContainerEvents(db: DbService): Promise<void> {
     });
 }
 
-export {createContainer, recreateContainer, startContainer, stopContainer, deleteContainer, watchContainerEvents, getDockerStats};
+export {createContainer, recreateContainer, ensureImage, startContainer, stopContainer, deleteContainer, watchContainerEvents, getDockerStats};
