@@ -12,6 +12,11 @@ export const VolumeMountSchema = z.object({
     label: z.string().regex(/^[a-zA-Z0-9_-]+$/).optional(),
 });
 
+export const FileOwnerSchema = z.object({
+    uid: z.number().int().min(0),
+    gid: z.number().int().min(0),
+});
+
 export const GameManifestSchema = z.object({
     image: z.string().min(1),
     env: z.array(z.string().regex(/^[A-Z0-9_]+=.+$/)), // Validates "KEY=VALUE" format
@@ -54,6 +59,7 @@ export type VolumeMountS = z.infer<typeof VolumeMountSchema>;
 export type ContainerStatS = z.infer<typeof ContainerStatSchema>;
 export type HealthCheckResponseS = z.infer<typeof HealthCheckResponseSchema>;
 export type GameManifestS = z.infer<typeof GameManifestSchema>;
+export type FileOwnerS = z.infer<typeof FileOwnerSchema>;
 
 // you must have : separating the name and path, name -> volume, path -> the folder to redirect
 export function toBind(serverName: string, mount: VolumeMountS): string {

@@ -1,5 +1,5 @@
 import { IGameService } from "../../interfaces/IGameService.js";
-import { GameManifestS, GameManifestSchema, ServerSettingsS, PalworldSettingsS } from "@hightower/shared";
+import { FileOwnerS, GameManifestS, GameManifestSchema, ServerSettingsS, PalworldSettingsS } from "@hightower/shared";
 import { firstFreePort } from "../serverHelper.service.js";
 
 export const GameService: IGameService = {
@@ -42,4 +42,5 @@ export const GameService: IGameService = {
     getHostPort: (usedPorts: Set<number>): number => firstFreePort(8211, 1, usedPorts),
 
     getMaxPlayers: (): number | null => null,
+    getFileOwner: (): FileOwnerS => ({ uid: 1000, gid: 1000 }),
 };

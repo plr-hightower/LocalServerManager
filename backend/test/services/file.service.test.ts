@@ -8,6 +8,9 @@ const mocks = vi.hoisted(() => ({
     readdir: vi.fn(),
     rm: vi.fn(),
     mkdir: vi.fn(),
+    chown: vi.fn(),
+    rename: vi.fn(),
+    copyFile: vi.fn(),
   },
 }))
 
@@ -19,7 +22,7 @@ vi.mock('fs/promises', () => ({
   default: mocks.fs,
 }))
 
-import { listDirectory, deleteEntry, prepareUploadTarget } from '../../src/services/file.service.js'
+import { listDirectory, deleteEntry, prepareUploadTarget, writeUploadedFile } from '../../src/services/file.service.js'
 
 function serverWith(manager_password: string | null): ServerSettingsS {
   return {
@@ -118,6 +121,66 @@ describe('prepareUploadTarget', () => {
   it('rejects a name with no usable segments', async () => {
     await expect(prepareUploadTarget('/vol/a', '../..')).rejects.toThrow('Invalid upload file name')
     expect(mocks.fs.mkdir).not.toHaveBeenCalled()
+  })
+})
+
+describe('writeUploadedFile ownership', () => {
+  const owner = { uid: 1000, gid: 1000 }
+
+  beforeEach(() => {
+    mocks.fs.mkdir.mockResolvedValue(undefined)
+    mocks.fs.chown.mockResolvedValue(undefined)
+    mocks.fs.rename.mockResolvedValue(undefined)
+    mocks.fs.readdir.mockResolvedValue([])
+  })
+
+  it('hands the written file to the game uid', async () => {
+    await writeUploadedFile('/vol/a', 'mod.jar', '/tmp/1', owner)
+    expect(mocks.fs.chown).toHaveBeenCalledWith('/vol/a/mod.jar', 1000, 1000)
+  })
+
+  it('moves the temp file into place', async () => {
+    await writeUploadedFile('/vol/a', 'mod.jar', '/tmp/1', owner)
+    expect(mocks.fs.rename).toHaveBeenCalledWith('/tmp/1', '/vol/a/mod.jar')
+  })
+
+  it('falls back to copy when rename crosses devices', async () => {
+    mocks.fs.rename.mockRejectedValue(Object.assign(new Error('EXDEV'), { code: 'EXDEV' }))
+    mocks.fs.copyFile.mockResolvedValue(undefined)
+    mocks.fs.rm.mockResolvedValue(undefined)
+
+    await writeUploadedFile('/vol/a', 'mod.jar', '/tmp/1', owner)
+
+    expect(mocks.fs.copyFile).toHaveBeenCalledWith('/tmp/1', '/vol/a/mod.jar')
+    expect(mocks.fs.chown).toHaveBeenCalledWith('/vol/a/mod.jar', 1000, 1000)
+  })
+
+  it('chowns directories it had to create', async () => {
+    mocks.fs.mkdir.mockResolvedValue('/vol/a/world')
+    await writeUploadedFile('/vol/a', 'world/region/r.0.0.mca', '/tmp/1', owner)
+    expect(mocks.fs.chown).toHaveBeenCalledWith('/vol/a/world', 1000, 1000)
+  })
+
+  it('does not chown directories that already existed', async () => {
+    mocks.fs.mkdir.mockResolvedValue(undefined)
+    await writeUploadedFile('/vol/a', 'world/region/r.0.0.mca', '/tmp/1', owner)
+    expect(mocks.fs.chown).not.toHaveBeenCalledWith('/vol/a/world', 1000, 1000)
+  })
+
+  it('walks into created subdirectories', async () => {
+    mocks.fs.mkdir.mockResolvedValue('/vol/a/world')
+    mocks.fs.readdir.mockResolvedValueOnce([{ name: 'region', isDirectory: () => true }])
+    mocks.fs.readdir.mockResolvedValueOnce([{ name: 'r.0.0.mca', isDirectory: () => false }])
+
+    await writeUploadedFile('/vol/a', 'world/region/r.0.0.mca', '/tmp/1', owner)
+
+    expect(mocks.fs.chown).toHaveBeenCalledWith('/vol/a/world/region', 1000, 1000)
+    expect(mocks.fs.chown).toHaveBeenCalledWith('/vol/a/world/region/r.0.0.mca', 1000, 1000)
+  })
+
+  it('uses the uid the game asked for, not a hardcoded one', async () => {
+    await writeUploadedFile('/vol/a', 'mod.jar', '/tmp/1', { uid: 0, gid: 0 })
+    expect(mocks.fs.chown).toHaveBeenCalledWith('/vol/a/mod.jar', 0, 0)
   })
 })
 

@@ -8,8 +8,9 @@ import {
     FileUploadFieldsSchema,
     FileListResponseSchema,
 } from '@hightower/shared';
-import { listDirectory, deleteEntry, resolveUploadDir, prepareUploadTarget } from '../services/file.service.js';
+import { listDirectory, deleteEntry, resolveUploadDir, writeUploadedFile } from '../services/file.service.js';
 import { verifyManagerPassword } from '../services/password.service.js';
+import { getGameService } from '../services/game.service.js';
 
 const db = new DbService();
 
@@ -93,15 +94,10 @@ const uploadFiles = async (req: Request, res: Response) => {
         }
 
         const dir = await resolveUploadDir(server, relPath);
+        const owner = (await getGameService(server)).getFileOwner();
 
         for (const [i, file] of files.entries()) {
-            const dest = await prepareUploadTarget(dir, paths[i] ?? file.originalname);
-            try {
-                await fs.rename(file.path, dest);
-            } catch {
-                await fs.copyFile(file.path, dest);
-                await fs.rm(file.path, { force: true });
-            }
+            await writeUploadedFile(dir, paths[i] ?? file.originalname, file.path, owner);
         }
 
         return res.status(200).json({ success: true, count: files.length });

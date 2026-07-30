@@ -1,5 +1,5 @@
 import { IGameService } from "../../interfaces/IGameService.js";
-import { GameManifestS, GameManifestSchema, GameSettingsS, ServerSettingsS, MinecraftSettingsS } from "@hightower/shared";
+import { FileOwnerS, GameManifestS, GameManifestSchema, GameSettingsS, ServerSettingsS, MinecraftSettingsS } from "@hightower/shared";
 import { firstFreePort } from "../serverHelper.service.js";
 
 const IMAGE_REPO = 'itzg/minecraft-server';
@@ -67,4 +67,5 @@ export const GameService: IGameService = {
 
     getMaxPlayers: (gameSettings: GameSettingsS): number | null =>
         gameSettings.game === 'minecraft' ? gameSettings.MAX_PLAYERS : null,
+    getFileOwner: (): FileOwnerS => ({ uid: 1000, gid: 1000 }),
 };

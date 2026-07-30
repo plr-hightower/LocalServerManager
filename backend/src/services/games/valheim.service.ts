@@ -1,5 +1,5 @@
 import { IGameService } from "../../interfaces/IGameService.js";
-import { GameManifestS, GameManifestSchema, ServerSettingsS, ValheimSettingsS } from "@hightower/shared";
+import { FileOwnerS, GameManifestS, GameManifestSchema, ServerSettingsS, ValheimSettingsS } from "@hightower/shared";
 import { firstFreePort } from "../serverHelper.service.js";
 
 export const GameService: IGameService = {
@@ -34,4 +34,5 @@ export const GameService: IGameService = {
     getHostPort: (usedPorts: Set<number>): number => firstFreePort(7000, 2, usedPorts, [0, 1]),
 
     getMaxPlayers: (): number | null => null,
+    getFileOwner: (): FileOwnerS => ({ uid: 0, gid: 0 }),
 };
