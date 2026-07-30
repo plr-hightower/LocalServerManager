@@ -4,7 +4,7 @@ import { IGameService } from "../interfaces/IGameService.js";
 import { CoreServerSettingsS, CreateServerRequestS, CreateServerRequestSchema, DeleteServerRequestS, DeleteServerRequestSchema, GameManifestS, HealthCheckResponseS, HealthCheckResponseSchema, RecreateServerRequestS, RecreateServerRequestSchema, ServerActionSchema, ServerSettingsS, ServerSettingsSchema, StatusE, StatusEnum } from '@hightower/shared';
 import { DbService } from "../repository/db.repository.js";
 import { success, ZodError } from "zod";
-import { createContainer, recreateContainer, deleteContainer, getDockerStats, startContainer, stopContainer, reconcileStatuses } from "../services/docker.service.js";
+import { createContainer, recreateContainer, removeContainerIfExists, deleteContainer, getDockerStats, startContainer, stopContainer, reconcileStatuses } from "../services/docker.service.js";
 import { getGameService, getManifest, getOccupiedPorts } from "../services/game.service.js";
 import { hashManagerPassword, verifyManagerPassword, isMasterPassword } from "../services/password.service.js";
 import { hasEnoughRam } from "../services/serverHelper.service.js";
@@ -77,8 +77,16 @@ const buildServer = async (req:Request, res:Response) => {
             settings.core_settings.manager_password = await hashManagerPassword(settings.core_settings.manager_password);
         }
 
-        settings.core_settings.container_id = await createContainer(settings,manifest);
-        const insertId:number = await db.logNewServer(settings);
+        const containerId = await createContainer(settings, manifest);
+        settings.core_settings.container_id = containerId;
+
+        let insertId: number;
+        try {
+            insertId = await db.logNewServer(settings);
+        } catch (err: unknown) {
+            await removeContainerIfExists(containerId);
+            throw err;
+        }
 
         console.log(insertId);
         res.status(200).json(insertId);

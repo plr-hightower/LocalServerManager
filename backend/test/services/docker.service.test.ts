@@ -36,6 +36,7 @@ vi.mock('../../src/repository/db.repository.js', () => ({
 import {
   createContainer,
   recreateContainer,
+  removeContainerIfExists,
   ensureImage,
   deleteContainer,
   startContainer,
@@ -224,6 +225,23 @@ describe('createContainer image handling', () => {
       (_s: unknown, done: (err: Error | null) => void) => done(new Error('registry unreachable')))
     await expect(createContainer(baseServer, baseManifest)).rejects.toThrow('registry unreachable')
     expect(mocks.dockerInstance.createContainer).not.toHaveBeenCalled()
+  })
+})
+
+describe('removeContainerIfExists', () => {
+  it('removes an existing container', async () => {
+    await removeContainerIfExists('some-id')
+    expect(mocks.container.remove).toHaveBeenCalledOnce()
+  })
+
+  it('resolves quietly when the container is already gone', async () => {
+    mocks.container.stop.mockRejectedValue(Object.assign(new Error('no such container'), { statusCode: 404 }))
+    await expect(removeContainerIfExists('ghost')).resolves.toBeUndefined()
+  })
+
+  it('propagates errors that are not 404', async () => {
+    mocks.container.stop.mockRejectedValue(Object.assign(new Error('daemon boom'), { statusCode: 500 }))
+    await expect(removeContainerIfExists('some-id')).rejects.toThrow('daemon boom')
   })
 })
 

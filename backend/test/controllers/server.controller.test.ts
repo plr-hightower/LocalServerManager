@@ -10,6 +10,7 @@ vi.mock('../../src/repository/db.repository.js', () => ({
 vi.mock('../../src/services/docker.service.js', () => ({
   createContainer: vi.fn(),
   recreateContainer: vi.fn().mockResolvedValue('b'.repeat(64)),
+  removeContainerIfExists: vi.fn().mockResolvedValue(undefined),
   deleteContainer: vi.fn(),
   startContainer: vi.fn(),
   stopContainer: vi.fn(),
@@ -203,6 +204,50 @@ describe('buildServer', () => {
     await serverController.buildServer(mockReq(validBody), res)
 
     expect(logNewServer.mock.calls[0][0].core_settings.status).toBe('stopped')
+  })
+
+  it('removes the container it just created when the DB insert fails', async () => {
+    makeDbMock({ logNewServer: vi.fn().mockRejectedValue(new Error('mysql down')) })
+    vi.mocked(dockerService.createContainer).mockResolvedValue('fresh-container-id')
+
+    const res = mockRes()
+    await serverController.buildServer(mockReq(validBody), res)
+
+    expect(dockerService.removeContainerIfExists).toHaveBeenCalledWith('fresh-container-id')
+    expect(res.status).toHaveBeenCalledWith(500)
+  })
+
+  it('rolls back by container id, never by name', async () => {
+    makeDbMock({ logNewServer: vi.fn().mockRejectedValue(new Error('mysql down')) })
+    vi.mocked(dockerService.createContainer).mockResolvedValue('fresh-container-id')
+
+    const res = mockRes()
+    await serverController.buildServer(mockReq(validBody), res)
+
+    expect(dockerService.removeContainerIfExists).not.toHaveBeenCalledWith('new-server')
+  })
+
+  it('does not remove anything when creation succeeds', async () => {
+    makeDbMock()
+    vi.mocked(dockerService.createContainer).mockResolvedValue('fresh-container-id')
+
+    const res = mockRes()
+    await serverController.buildServer(mockReq(validBody), res)
+
+    expect(dockerService.removeContainerIfExists).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('does not roll back when the container was never created', async () => {
+    makeDbMock()
+    vi.mocked(dockerService.createContainer).mockRejectedValue(
+      Object.assign(new Error('name already in use'), { statusCode: 409 }))
+
+    const res = mockRes()
+    await serverController.buildServer(mockReq(validBody), res)
+
+    expect(dockerService.removeContainerIfExists).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(500)
   })
 
   it('persists env_visibility passed in core_settings', async () => {
