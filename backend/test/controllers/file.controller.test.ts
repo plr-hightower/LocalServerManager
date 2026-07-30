@@ -12,14 +12,18 @@ const svc = vi.hoisted(() => ({
   listDirectory: vi.fn(),
   deleteEntry: vi.fn(),
   resolveUploadDir: vi.fn(),
-  prepareUploadTarget: vi.fn(),
+  writeUploadedFile: vi.fn(),
 }))
 vi.mock('../../src/services/password.service.js', () => ({ verifyManagerPassword: svc.verifyManagerPassword }))
 vi.mock('../../src/services/file.service.js', () => ({
   listDirectory: svc.listDirectory,
   deleteEntry: svc.deleteEntry,
   resolveUploadDir: svc.resolveUploadDir,
-  prepareUploadTarget: svc.prepareUploadTarget,
+  writeUploadedFile: svc.writeUploadedFile,
+}))
+
+vi.mock('../../src/services/game.service.js', () => ({
+  getGameService: vi.fn().mockResolvedValue({ getFileOwner: () => ({ uid: 1000, gid: 1000 }) }),
 }))
 
 const fsMock = vi.hoisted(() => ({ rename: vi.fn(), copyFile: vi.fn(), rm: vi.fn() }))
@@ -136,7 +140,7 @@ function authorizeUpload() {
   dbMock.getServerByName.mockResolvedValue(stoppedServer)
   svc.verifyManagerPassword.mockResolvedValue(true)
   svc.resolveUploadDir.mockResolvedValue('/vol/a')
-  svc.prepareUploadTarget.mockImplementation((dir: string, rel: string) => `${dir}/${rel}`)
+  svc.writeUploadedFile.mockResolvedValue(undefined)
   fsMock.rename.mockResolvedValue(undefined)
 }
 
@@ -177,9 +181,8 @@ describe('uploadFiles', () => {
     const res = mockRes()
     await fileController.uploadFiles(mockReq({ ...validBody, paths }, files), res)
 
-    expect(svc.prepareUploadTarget).toHaveBeenCalledWith('/vol/a', 'pack/mods/a.jar')
-    expect(fsMock.rename).toHaveBeenCalledWith('/tmp/1', '/vol/a/pack/mods/a.jar')
-    expect(fsMock.rename).toHaveBeenCalledWith('/tmp/2', '/vol/a/pack/config/b.toml')
+    expect(svc.writeUploadedFile).toHaveBeenCalledWith('/vol/a', 'pack/mods/a.jar', '/tmp/1', { uid: 1000, gid: 1000 })
+    expect(svc.writeUploadedFile).toHaveBeenCalledWith('/vol/a', 'pack/config/b.toml', '/tmp/2', { uid: 1000, gid: 1000 })
     expect(res.status).toHaveBeenCalledWith(200)
   })
 
@@ -192,7 +195,7 @@ describe('uploadFiles', () => {
       res,
     )
 
-    expect(svc.prepareUploadTarget).toHaveBeenCalledWith('/vol/a', 'pack/mods/a.jar')
+    expect(svc.writeUploadedFile).toHaveBeenCalledWith('/vol/a', 'pack/mods/a.jar', expect.any(String), { uid: 1000, gid: 1000 })
     expect(res.status).toHaveBeenCalledWith(200)
   })
 
@@ -202,7 +205,7 @@ describe('uploadFiles', () => {
     const res = mockRes()
     await fileController.uploadFiles(mockReq(validBody, [{ path: '/tmp/1', originalname: 'a.jar' }]), res)
 
-    expect(svc.prepareUploadTarget).toHaveBeenCalledWith('/vol/a', 'a.jar')
+    expect(svc.writeUploadedFile).toHaveBeenCalledWith('/vol/a', 'a.jar', expect.any(String), { uid: 1000, gid: 1000 })
     expect(res.status).toHaveBeenCalledWith(200)
   })
 
@@ -216,6 +219,6 @@ describe('uploadFiles', () => {
     )
 
     expect(res.status).toHaveBeenCalledWith(400)
-    expect(svc.prepareUploadTarget).not.toHaveBeenCalled()
+    expect(svc.writeUploadedFile).not.toHaveBeenCalled()
   })
 })

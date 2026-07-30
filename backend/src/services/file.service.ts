@@ -1,4 +1,4 @@
-import { ServerSettingsS, FileEntryS } from "@hightower/shared";
+import { ServerSettingsS, FileEntryS, FileOwnerS } from "@hightower/shared";
 import fs from "fs/promises";
 import path from "path";
 import { getWorldHostPaths } from "./world.service.js";
@@ -82,13 +82,48 @@ export async function resolveUploadDir(server: ServerSettingsS, relPath: string)
 }
 
 // Uploaded folders arrive as files named by their relative path.
-export async function prepareUploadTarget(dir: string, relName: string): Promise<string> {
+export async function prepareUploadTarget(dir: string, relName: string, owner?: FileOwnerS): Promise<string> {
     const segments = relName.split(/[\\/]/).filter(s => s && s !== "." && s !== "..");
     if (segments.length === 0) {
         throw new Error("Invalid upload file name");
     }
 
     const dest = path.join(dir, ...segments);
-    await fs.mkdir(path.dirname(dest), { recursive: true });
+    const firstCreated = await fs.mkdir(path.dirname(dest), { recursive: true });
+    if (owner && firstCreated) {
+        await chownRecursive(firstCreated, owner);
+    }
     return dest;
+}
+
+async function chownRecursive(target: string, owner: FileOwnerS): Promise<void> {
+    await fs.chown(target, owner.uid, owner.gid);
+
+    const entries = await fs.readdir(target, { withFileTypes: true });
+    for (const entry of entries) {
+        const child = path.join(target, entry.name);
+        if (entry.isDirectory()) {
+            await chownRecursive(child, owner);
+        } else {
+            await fs.chown(child, owner.uid, owner.gid);
+        }
+    }
+}
+
+export async function writeUploadedFile(
+    dir: string,
+    relName: string,
+    tempPath: string,
+    owner: FileOwnerS,
+): Promise<void> {
+    const dest = await prepareUploadTarget(dir, relName, owner);
+
+    try {
+        await fs.rename(tempPath, dest);
+    } catch {
+        await fs.copyFile(tempPath, dest);
+        await fs.rm(tempPath, { force: true });
+    }
+
+    await fs.chown(dest, owner.uid, owner.gid);
 }
