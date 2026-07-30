@@ -5,6 +5,14 @@
 ### Added
 
 ### Fixed
+
+### Changed
+
+## [0.5.4] 29 July 2026
+
+### Added
+
+### Fixed
 - File size to large to upload
 
 ### Changed
