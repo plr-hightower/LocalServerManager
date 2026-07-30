@@ -5,6 +5,14 @@
 ### Added
 
 ### Fixed
+
+### Changed
+
+## [0.5.2] 29 July 2026
+
+### Added
+
+### Fixed
 - Image for specific minecraft does not load at runtime, fixed.
 
 ### Changed
