@@ -26,10 +26,14 @@ export const CoreServerSettingsSchema = z.object({
 export const MinecraftSettingsSchema = z.object({
     game: z.literal("minecraft"),
     EULA: z.literal("TRUE").default("TRUE"),
-    TYPE: z.enum(["VANILLA","PAPER","FABRIC","FORGE","NEOFORGE","QUILT"]).default("FABRIC"),
+    TYPE: z.enum(["VANILLA","PAPER","FABRIC","FORGE","NEOFORGE","QUILT","GTNH"]).default("FABRIC"),
     VERSION: z.string().default("LATEST"),
     JAVA_VERSION: z.enum(["8","11","16","17","21","25"]).default("21"),
     LOADER_VERSION: z.string().default("LATEST"),
+
+    // Only read for modpack types that pin their own Minecraft version (e.g. GTNH).
+    // "latest", "latest-beta", or a specific pack version like "2.8.1".
+    PACK_VERSION: z.string().default("latest"),
 
     //Message of the day (whats below the server name)
     MOTD: z.string().max(59).default("A Minecraft Server"),

@@ -199,6 +199,35 @@ describe('GameService (minecraft)', () => {
       expect(manifest.env.some(e => e.startsWith('FORGE_VERSION='))).toBe(false)
     })
 
+    it('supports GTNH as a TYPE', async () => {
+      const manifest = await GameService.getGameManifest(withSettings({ TYPE: 'GTNH' }))
+      expect(manifest.env).toContain('TYPE=GTNH')
+    })
+
+    it('sends PACK_VERSION as GTNH_PACK_VERSION for GTNH', async () => {
+      const manifest = await GameService.getGameManifest(
+        withSettings({ TYPE: 'GTNH', PACK_VERSION: '2.8.1' }),
+      )
+      expect(manifest.env).toContain('GTNH_PACK_VERSION=2.8.1')
+    })
+
+    it('defaults GTNH_PACK_VERSION to latest when PACK_VERSION is missing on an older server', async () => {
+      const legacy = withSettings({ TYPE: 'GTNH' })
+      delete (legacy.game_settings as Partial<MinecraftSettingsS>).PACK_VERSION
+      const manifest = await GameService.getGameManifest(legacy)
+      expect(manifest.env).toContain('GTNH_PACK_VERSION=latest')
+    })
+
+    it('omits VERSION for GTNH since the pack pins its own Minecraft version', async () => {
+      const manifest = await GameService.getGameManifest(withSettings({ TYPE: 'GTNH' }))
+      expect(manifest.env.some(e => e.startsWith('VERSION='))).toBe(false)
+    })
+
+    it('does not send GTNH_PACK_VERSION for non-GTNH types', async () => {
+      const manifest = await GameService.getGameManifest(withSettings({ TYPE: 'FORGE' }))
+      expect(manifest.env.some(e => e.startsWith('GTNH_PACK_VERSION='))).toBe(false)
+    })
+
     it('sets the JVM heap below the container limit', async () => {
       const manifest = await GameService.getGameManifest(baseServer)
       expect(manifest.env).toContain('MEMORY=3072M')
