@@ -3,7 +3,7 @@ import { FileOwnerS, GameManifestS, GameManifestSchema, GameSettingsS, ServerSet
 import { firstFreePort } from "../serverHelper.service.js";
 
 const IMAGE_REPO = 'itzg/minecraft-server';
-const IMAGE_TAG = '2026.7.0';
+const IMAGE_TAG = '2026.8.0';
 const DEFAULT_JAVA_VERSION = '21';
 
 const HEAP_FRACTION = 0.75;
