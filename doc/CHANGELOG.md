@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added gregtech new horizons servers to minecraft manifest.
+
 ### Fixed
 
 ### Changed
