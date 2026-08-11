@@ -4,6 +4,14 @@
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [0.5.6] 11 August 2026
+
+### Added
+
 - Added gregtech new horizons servers to minecraft manifest.
 - Added 12 GB of ram option to support big modpacks.
 
