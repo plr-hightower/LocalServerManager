@@ -82,7 +82,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useServerStore } from '@/stores/serverStore';
-import type { ServerSettingsS } from '@hightower/shared';
+import { RamAllocMbEnum, type ServerSettingsS } from '@hightower/shared';
 import { useServerForm } from '@/composables/useServerForm';
 import { useHealthCheck } from '@/composables/useHealthCheck';
 import ServerControls from '@/components/server/ServerControls.vue';
@@ -101,7 +101,7 @@ const { fields, model, validateField } = useServerForm(
     { initial: () => server.value?.game_settings, readonly: true },
 );
 
-const RAM_OPTIONS = [1024, 2048, 4096, 8192] as const;
+const RAM_OPTIONS = RamAllocMbEnum.values;
 
 // hidden settings are omitted; legacy servers (no env_visibility) fall back to per-field defaults
 const visibleFields = computed(() => {

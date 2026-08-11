@@ -1,7 +1,7 @@
 import * as z from "zod";
 
 export const GameEnum = z.enum(["minecraft","valheim","palworld"]);
-export const RamAllocMbEnum = z.literal([ 1024, 2048, 4096, 8192]);
+export const RamAllocMbEnum = z.literal([ 1024, 2048, 4096, 8192, 12288]);
 export const StatusEnum = z.enum(["started","starting","stopped","stopping","error"]);
 
 export const CoreServerSettingsSchema = z.object({
@@ -26,10 +26,11 @@ export const CoreServerSettingsSchema = z.object({
 export const MinecraftSettingsSchema = z.object({
     game: z.literal("minecraft"),
     EULA: z.literal("TRUE").default("TRUE"),
-    TYPE: z.enum(["VANILLA","PAPER","FABRIC","FORGE","NEOFORGE","QUILT"]).default("FABRIC"),
+    TYPE: z.enum(["VANILLA","PAPER","FABRIC","FORGE","NEOFORGE","QUILT","GTNH"]).default("FABRIC"),
     VERSION: z.string().default("LATEST"),
     JAVA_VERSION: z.enum(["8","11","16","17","21","25"]).default("21"),
     LOADER_VERSION: z.string().default("LATEST"),
+    PACK_VERSION: z.string().default("latest"),
 
     //Message of the day (whats below the server name)
     MOTD: z.string().max(59).default("A Minecraft Server"),
