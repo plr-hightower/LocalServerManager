@@ -5,10 +5,12 @@
 ### Added
 
 - Added gregtech new horizons servers to minecraft manifest.
+- Added 12 GB of ram option to support big modpacks.
 
 ### Fixed
 
 ### Changed
+- Now 80% of allocated ram will be used in the minecraft jvm
 
 ## [0.5.5] 29 July 2026
 

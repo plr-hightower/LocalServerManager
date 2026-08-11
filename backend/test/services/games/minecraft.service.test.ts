@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { GameService } from '../../../src/services/games/minecraft.service.js'
+import { RamAllocMbEnum } from '@hightower/shared'
 import type { ServerSettingsS, MinecraftSettingsS } from '@hightower/shared'
 
 const baseServer: ServerSettingsS = {
@@ -70,7 +71,7 @@ describe('GameService (minecraft)', () => {
   describe('getGameManifest', () => {
     it('returns the correct Docker image', async () => {
       const manifest = await GameService.getGameManifest(baseServer)
-      expect(manifest.image).toBe('itzg/minecraft-server:2026.7.0-java21')
+      expect(manifest.image).toBe('itzg/minecraft-server:2026.8.0-java21')
     })
 
     it('includes tcp in protocols', async () => {
@@ -132,14 +133,14 @@ describe('GameService (minecraft)', () => {
 
     it('builds the image tag from JAVA_VERSION', async () => {
       const manifest = await GameService.getGameManifest(withSettings({ JAVA_VERSION: '17' }))
-      expect(manifest.image).toBe('itzg/minecraft-server:2026.7.0-java17')
+      expect(manifest.image).toBe('itzg/minecraft-server:2026.8.0-java17')
     })
 
     it('falls back to java21 when JAVA_VERSION is missing on an older server', async () => {
       const legacy = withSettings({})
       delete (legacy.game_settings as Partial<MinecraftSettingsS>).JAVA_VERSION
       const manifest = await GameService.getGameManifest(legacy)
-      expect(manifest.image).toBe('itzg/minecraft-server:2026.7.0-java21')
+      expect(manifest.image).toBe('itzg/minecraft-server:2026.8.0-java21')
     })
 
     it('never produces an undefined java tag', async () => {
@@ -230,15 +231,16 @@ describe('GameService (minecraft)', () => {
 
     it('sets the JVM heap below the container limit', async () => {
       const manifest = await GameService.getGameManifest(baseServer)
-      expect(manifest.env).toContain('MEMORY=3072M')
+      expect(manifest.env).toContain('MEMORY=3276M')
     })
 
     it('scales the heap with ram_alloc_mb', async () => {
       const cases: [number, string][] = [
-        [1024, 'MEMORY=768M'],
-        [2048, 'MEMORY=1536M'],
-        [4096, 'MEMORY=3072M'],
-        [8192, 'MEMORY=6144M'],
+        [1024, 'MEMORY=819M'],
+        [2048, 'MEMORY=1638M'],
+        [4096, 'MEMORY=3276M'],
+        [8192, 'MEMORY=6553M'],
+        [12288, 'MEMORY=9830M'],
       ]
       for (const [ram, expected] of cases) {
         const manifest = await GameService.getGameManifest({
@@ -250,7 +252,7 @@ describe('GameService (minecraft)', () => {
     })
 
     it('always leaves headroom under the container limit', async () => {
-      for (const ram of [1024, 2048, 4096, 8192] as const) {
+      for (const ram of RamAllocMbEnum.values) {
         const manifest = await GameService.getGameManifest({
           ...baseServer,
           core_settings: { ...baseServer.core_settings, ram_alloc_mb: ram },
@@ -258,6 +260,38 @@ describe('GameService (minecraft)', () => {
         const heap = Number(manifest.env.find(e => e.startsWith('MEMORY='))!.slice(7, -1))
         expect(heap).toBeLessThan(ram)
       }
+    })
+
+    it('sends GTNH_PACK_VERSION for a GTNH server', async () => {
+      const manifest = await GameService.getGameManifest(
+        withSettings({ TYPE: 'GTNH', PACK_VERSION: '2.8.1' }))
+      expect(manifest.env).toContain('GTNH_PACK_VERSION=2.8.1')
+    })
+
+    it('omits VERSION for GTNH because the pack pins minecraft itself', async () => {
+      const manifest = await GameService.getGameManifest(
+        withSettings({ TYPE: 'GTNH', VERSION: '1.20.1' }))
+      expect(manifest.env.some(e => e.startsWith('VERSION='))).toBe(false)
+    })
+
+    it('still sends VERSION for every non-pack type', async () => {
+      for (const type of ['VANILLA', 'PAPER', 'FABRIC', 'FORGE', 'NEOFORGE', 'QUILT'] as const) {
+        const manifest = await GameService.getGameManifest(withSettings({ TYPE: type }))
+        expect(manifest.env.some(e => e.startsWith('VERSION='))).toBe(true)
+      }
+    })
+
+    it('defaults the pack version when missing on an older server', async () => {
+      const legacy = withSettings({ TYPE: 'GTNH' })
+      delete (legacy.game_settings as Partial<MinecraftSettingsS>).PACK_VERSION
+      const manifest = await GameService.getGameManifest(legacy)
+      expect(manifest.env).toContain('GTNH_PACK_VERSION=latest')
+    })
+
+    it('sends no loader version env for GTNH', async () => {
+      const manifest = await GameService.getGameManifest(
+        withSettings({ TYPE: 'GTNH', LOADER_VERSION: '1.2.3' }))
+      expect(manifest.env.some(e => e.endsWith('=1.2.3'))).toBe(false)
     })
 
     it('resolves without throwing for valid settings', async () => {

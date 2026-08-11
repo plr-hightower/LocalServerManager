@@ -6,22 +6,18 @@ const IMAGE_REPO = 'itzg/minecraft-server';
 const IMAGE_TAG = '2026.8.0';
 const DEFAULT_JAVA_VERSION = '21';
 
-const HEAP_FRACTION = 0.75;
+const HEAP_FRACTION = 0.80;
 const MIN_HEAP_MB = 512;
 
-// Full Record (not Partial): adding a TYPE to the enum won't compile until its
-// behaviour is declared here, so a new loader/modpack can't be half-wired.
-const TYPE_SPECS: Record<MinecraftSettingsS['TYPE'], { loaderVersionEnv?: string; packVersionEnv?: string; pinsMinecraftVersion?: boolean }> = {
-    VANILLA: {},
-    PAPER: {},
-    FABRIC: { loaderVersionEnv: 'FABRIC_LOADER_VERSION' },
-    FORGE: { loaderVersionEnv: 'FORGE_VERSION' },
-    NEOFORGE: { loaderVersionEnv: 'NEOFORGE_VERSION' },
-    QUILT: { loaderVersionEnv: 'QUILT_LOADER_VERSION' },
+const LOADER_VERSION_ENV: Partial<Record<MinecraftSettingsS['TYPE'], string>> = {
+    FORGE: 'FORGE_VERSION',
+    NEOFORGE: 'NEOFORGE_VERSION',
+    FABRIC: 'FABRIC_LOADER_VERSION',
+    QUILT: 'QUILT_LOADER_VERSION',
+};
 
-    // GTNH pins its own Minecraft/Forge build the image downloads and updates
-    // the whole pack itself based on GTNH_PACK_VERSION.
-    GTNH: { packVersionEnv: 'GTNH_PACK_VERSION', pinsMinecraftVersion: true },
+const PACK_VERSION_ENV: Partial<Record<MinecraftSettingsS['TYPE'], string>> = {
+    GTNH: 'GTNH_PACK_VERSION',
 };
 
 // ONLY THINGS THAT ARE UNIQUE TO MINECRAFT, This goes for all other files like this
@@ -39,7 +35,8 @@ export const GameService: IGameService = {
 
         const javaVersion = gs.JAVA_VERSION ?? DEFAULT_JAVA_VERSION;
         const loaderVersion = gs.LOADER_VERSION ?? 'LATEST';
-        const spec = TYPE_SPECS[gs.TYPE];
+        const loaderVersionEnv = LOADER_VERSION_ENV[gs.TYPE];
+        const packVersionEnv = PACK_VERSION_ENV[gs.TYPE];
 
         const env = [
             `EULA=${gs.EULA}`,
@@ -50,16 +47,14 @@ export const GameService: IGameService = {
             `MEMORY=${heapMbFor(settings.core_settings.ram_alloc_mb)}M`,
         ];
 
-        if (!spec.pinsMinecraftVersion) {
+        if (packVersionEnv) {
+            env.push(`${packVersionEnv}=${gs.PACK_VERSION ?? 'latest'}`);
+        } else {
             env.push(`VERSION=${gs.VERSION}`);
         }
 
-        if (spec.packVersionEnv) {
-            env.push(`${spec.packVersionEnv}=${gs.PACK_VERSION ?? 'latest'}`);
-        }
-
-        if (spec.loaderVersionEnv && loaderVersion !== 'LATEST') {
-            env.push(`${spec.loaderVersionEnv}=${loaderVersion}`);
+        if (loaderVersionEnv && loaderVersion !== 'LATEST') {
+            env.push(`${loaderVersionEnv}=${loaderVersion}`);
         }
 
         const rawManifest = {

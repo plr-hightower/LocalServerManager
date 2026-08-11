@@ -1,7 +1,7 @@
 import * as z from "zod";
 
 export const GameEnum = z.enum(["minecraft","valheim","palworld"]);
-export const RamAllocMbEnum = z.literal([ 1024, 2048, 4096, 8192]);
+export const RamAllocMbEnum = z.literal([ 1024, 2048, 4096, 8192, 12288]);
 export const StatusEnum = z.enum(["started","starting","stopped","stopping","error"]);
 
 export const CoreServerSettingsSchema = z.object({
@@ -30,9 +30,6 @@ export const MinecraftSettingsSchema = z.object({
     VERSION: z.string().default("LATEST"),
     JAVA_VERSION: z.enum(["8","11","16","17","21","25"]).default("21"),
     LOADER_VERSION: z.string().default("LATEST"),
-
-    // Only read for modpack types that pin their own Minecraft version (e.g. GTNH).
-    // "latest", "latest-beta", or a specific pack version like "2.8.1".
     PACK_VERSION: z.string().default("latest"),
 
     //Message of the day (whats below the server name)
