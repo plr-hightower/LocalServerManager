@@ -3,10 +3,10 @@ import { FileOwnerS, GameManifestS, GameManifestSchema, GameSettingsS, ServerSet
 import { firstFreePort } from "../serverHelper.service.js";
 
 const IMAGE_REPO = 'itzg/minecraft-server';
-const IMAGE_TAG = '2026.7.0';
+const IMAGE_TAG = '2026.8.0';
 const DEFAULT_JAVA_VERSION = '21';
 
-const HEAP_FRACTION = 0.75;
+const HEAP_FRACTION = 0.80;
 const MIN_HEAP_MB = 512;
 
 const LOADER_VERSION_ENV: Partial<Record<MinecraftSettingsS['TYPE'], string>> = {
@@ -14,6 +14,10 @@ const LOADER_VERSION_ENV: Partial<Record<MinecraftSettingsS['TYPE'], string>> = 
     NEOFORGE: 'NEOFORGE_VERSION',
     FABRIC: 'FABRIC_LOADER_VERSION',
     QUILT: 'QUILT_LOADER_VERSION',
+};
+
+const PACK_VERSION_ENV: Partial<Record<MinecraftSettingsS['TYPE'], string>> = {
+    GTNH: 'GTNH_PACK_VERSION',
 };
 
 // ONLY THINGS THAT ARE UNIQUE TO MINECRAFT, This goes for all other files like this
@@ -32,16 +36,22 @@ export const GameService: IGameService = {
         const javaVersion = gs.JAVA_VERSION ?? DEFAULT_JAVA_VERSION;
         const loaderVersion = gs.LOADER_VERSION ?? 'LATEST';
         const loaderVersionEnv = LOADER_VERSION_ENV[gs.TYPE];
+        const packVersionEnv = PACK_VERSION_ENV[gs.TYPE];
 
         const env = [
             `EULA=${gs.EULA}`,
             `TYPE=${gs.TYPE}`,
-            `VERSION=${gs.VERSION}`,
             `MOTD=${gs.MOTD}`,
             `MAX_PLAYERS=${gs.MAX_PLAYERS}`,
             `VIEW_DISTANCE=${gs.VIEW_DISTANCE}`,
             `MEMORY=${heapMbFor(settings.core_settings.ram_alloc_mb)}M`,
         ];
+
+        if (packVersionEnv) {
+            env.push(`${packVersionEnv}=${gs.PACK_VERSION ?? 'latest'}`);
+        } else {
+            env.push(`VERSION=${gs.VERSION}`);
+        }
 
         if (loaderVersionEnv && loaderVersion !== 'LATEST') {
             env.push(`${loaderVersionEnv}=${loaderVersion}`);
