@@ -3,6 +3,7 @@ import type { ServerSettingsS } from '@hightower/shared'
 
 const mocks = vi.hoisted(() => ({
   getWorldHostPaths: vi.fn(),
+  streamZip: vi.fn(),
   fs: {
     stat: vi.fn(),
     readdir: vi.fn(),
@@ -16,13 +17,14 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../../src/services/world.service.js', () => ({
   getWorldHostPaths: mocks.getWorldHostPaths,
+  streamZip: mocks.streamZip,
 }))
 
 vi.mock('fs/promises', () => ({
   default: mocks.fs,
 }))
 
-import { listDirectory, deleteEntry, prepareUploadTarget, writeUploadedFile } from '../../src/services/file.service.js'
+import { listDirectory, deleteEntry, prepareUploadTarget, writeUploadedFile, streamPathDownload } from '../../src/services/file.service.js'
 
 function serverWith(manager_password: string | null): ServerSettingsS {
   return {
@@ -181,6 +183,64 @@ describe('writeUploadedFile ownership', () => {
   it('uses the uid the game asked for, not a hardcoded one', async () => {
     await writeUploadedFile('/vol/a', 'mod.jar', '/tmp/1', { uid: 0, gid: 0 })
     expect(mocks.fs.chown).toHaveBeenCalledWith('/vol/a/mod.jar', 0, 0)
+  })
+})
+
+describe('streamPathDownload', () => {
+  function mockRes() {
+    return { download: vi.fn() } as unknown as import('express').Response
+  }
+
+  it('sends a file straight to the browser', async () => {
+    mocks.fs.stat.mockResolvedValue({ isDirectory: () => false })
+    const res = mockRes()
+
+    await streamPathDownload(serverWith(null), res, 'vol0/world/level.dat')
+
+    expect(res.download).toHaveBeenCalledWith(
+      '/var/lib/docker/volumes/test/_data/world/level.dat',
+      'level.dat',
+      { dotfiles: 'allow' },
+    )
+    expect(mocks.streamZip).not.toHaveBeenCalled()
+  })
+
+  it('sends a dotfile instead of 404ing on it', async () => {
+    mocks.fs.stat.mockResolvedValue({ isDirectory: () => false })
+    const res = mockRes()
+
+    await streamPathDownload(serverWith(null), res, 'vol0/.fabric-manifest.json')
+
+    expect(res.download).toHaveBeenCalledWith(
+      '/var/lib/docker/volumes/test/_data/.fabric-manifest.json',
+      '.fabric-manifest.json',
+      { dotfiles: 'allow' },
+    )
+  })
+
+  it('zips a folder under its own name', async () => {
+    mocks.fs.stat.mockResolvedValue({ isDirectory: () => true })
+    const res = mockRes()
+
+    await streamPathDownload(serverWith(null), res, 'vol0/world/region')
+
+    expect(mocks.streamZip).toHaveBeenCalledWith(res, 'region.zip', [
+      { src: '/var/lib/docker/volumes/test/_data/world/region', name: 'region' },
+    ])
+    expect(res.download).not.toHaveBeenCalled()
+  })
+
+  it('rejects a traversal outside the volume', async () => {
+    const res = mockRes()
+
+    await expect(streamPathDownload(serverWith(null), res, 'vol0/../../etc/passwd')).rejects.toThrow('escapes')
+
+    expect(res.download).not.toHaveBeenCalled()
+    expect(mocks.streamZip).not.toHaveBeenCalled()
+  })
+
+  it('rejects an unknown volume', async () => {
+    await expect(streamPathDownload(serverWith(null), mockRes(), 'notavol/file')).rejects.toThrow('Unknown volume')
   })
 })
 

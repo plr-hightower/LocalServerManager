@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { CoreServerSettingsSchema } from "./server.schema.js";
+import { FilePathSchema } from "./file.schema.js";
 
 export const VolumeMountSchema = z.object({
     path: z.string().refine(
@@ -51,7 +52,10 @@ export const HealthCheckResponseSchema = z.object({
 
 export const WorldRequestSchema = CoreServerSettingsSchema
     .pick({ name: true, created_by: true })
-    .extend({ vol: z.coerce.number().int().min(0).optional() });
+    .extend({
+        vol: z.coerce.number().int().min(0).optional(),
+        path: FilePathSchema.optional(),
+    });
 
 
 export type WorldRequestS = z.infer<typeof WorldRequestSchema>;
