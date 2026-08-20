@@ -11,6 +11,8 @@ const archiver = require('archiver'); // use it like CommonJS
 
 const docker = new Docker();
 
+export type ZipDirS = { src: string; name: string };
+
 
 /// <summary>
 /// Resolves the host filesystem paths for all world volumes of a server.
@@ -31,6 +33,37 @@ export async function getWorldHostPaths(server: ServerSettingsS, manif?: GameMan
 }
 
 /// <summary>
+/// Streams a zip archive of the given host directories to the HTTP response.
+/// Each entry is placed in its own subfolder, named by its 'name'.
+/// </summary>
+/// <param name="res">The Express response to stream the archive to.</param>
+/// <param name="filename">The file name offered to the browser.</param>
+/// <param name="dirs">The host directories to archive.</param>
+export async function streamZip(res: Response, filename: string, dirs: ZipDirS[]): Promise<void> {
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    // store: game saves are already compressed
+    const archive = archiver('zip', { store: true });
+
+    archive.on('error', (err: Error) => {
+        if (!res.headersSent) {
+            res.status(500).contentType('application/json').json({ error: 'Failed to create archive', details: err.message });
+        } else {
+            res.destroy();
+        }
+    });
+
+    archive.pipe(res);
+
+    for (const dir of dirs) {
+        archive.directory(dir.src, dir.name);
+    }
+
+    await archive.finalize();
+}
+
+/// <summary>
 /// Streams a zip archive of all world volumes directly to the HTTP response.
 /// Each volume is placed in its own subfolder (vol0, vol1, ...) within the archive.
 /// </summary>
@@ -46,26 +79,7 @@ export async function streamWorldDownload(server: ServerSettingsS, res: Response
 
     const indices = vol !== undefined ? [vol] : hostPaths.map((_, i) => i);
     const fileSuffix = vol !== undefined ? `vol${vol}` : 'world';
+    const dirs = indices.map(i => ({ src: hostPaths[i], name: `vol${i}` }));
 
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename="${server.core_settings.name}_${fileSuffix}.zip"`);
-
-    // store: game saves are already compressed
-    const archive = archiver('zip', { store: true });
-
-    archive.on('error', (err: Error) => {
-        if (!res.headersSent) {
-            res.status(500).contentType('application/json').json({ error: 'Failed to create archive', details: err.message });
-        } else {
-            res.destroy();
-        }
-    });
-
-    archive.pipe(res);
-
-    for (const i of indices) {
-        archive.directory(hostPaths[i], `vol${i}`);
-    }
-
-    await archive.finalize();
+    await streamZip(res, `${server.core_settings.name}_${fileSuffix}.zip`, dirs);
 }

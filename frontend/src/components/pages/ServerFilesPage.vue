@@ -55,11 +55,7 @@
                                 <td class="mono">{{ entry.type === 'dir' ? '📁' : '📄' }} {{ entry.name }}</td>
                                 <td>{{ entry.type === 'dir' ? '' : formatSize(entry.size) }}</td>
                                 <td class="server-card__actions">
-                                    <button
-                                        v-if="fm.atRoot.value && entry.type === 'dir'"
-                                        class="btn btn--ghost btn--sm"
-                                        @click.stop="fm.downloadVolume(volIndexOf(entry.name))"
-                                    >
+                                    <button class="btn btn--ghost btn--sm" @click.stop="download(entry)">
                                         Download
                                     </button>
                                     <button
@@ -116,6 +112,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import type { FileEntryS } from '@hightower/shared';
 import { useRoute } from 'vue-router';
 import { useServerStore } from '@/stores/serverStore';
 import { useFileManager } from '@/composables/useFileManager';
@@ -135,6 +132,11 @@ const uploadMode = ref<'files' | 'folder'>('files');
 
 function volIndexOf(name: string): number {
     return Number(/^vol(\d+)$/.exec(name)?.[1] ?? 0);
+}
+
+function download(entry: FileEntryS) {
+    if (fm.atRoot.value) fm.downloadVolume(volIndexOf(entry.name));
+    else fm.downloadEntry(entry);
 }
 
 function formatSize(bytes: number): string {

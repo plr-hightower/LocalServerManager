@@ -74,12 +74,17 @@ export function useFileManager(server: MaybeRefOrGetter<ServerSettingsS>) {
     }
 
     function downloadVolume(volIndex: number) {
-        worldStore.downloadWorld(toValue(server), volIndex);
+        worldStore.downloadWorld(toValue(server), { vol: volIndex });
+    }
+
+    function downloadEntry(entry: FileEntryS) {
+        const path = cwd.value ? `${cwd.value}/${entry.name}` : entry.name;
+        worldStore.downloadWorld(toValue(server), { path, isDir: entry.type === 'dir' });
     }
 
     return {
         password, cwd, entries, unlocked, loading, error,
         segments, atRoot,
-        refresh, open, goUp, goTo, remove, upload, downloadVolume,
+        refresh, open, goUp, goTo, remove, upload, downloadVolume, downloadEntry,
     };
 }

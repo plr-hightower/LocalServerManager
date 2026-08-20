@@ -1,7 +1,8 @@
 import { ServerSettingsS, FileEntryS, FileOwnerS } from "@hightower/shared";
+import type { Response } from "express";
 import fs from "fs/promises";
 import path from "path";
-import { getWorldHostPaths } from "./world.service.js";
+import { getWorldHostPaths, streamZip } from "./world.service.js";
 
 async function resolvePath(server: ServerSettingsS, relPath: string): Promise<{ root: string; resolved: string }> {
     const hostPaths = await getWorldHostPaths(server);
@@ -70,6 +71,19 @@ export async function deleteEntry(server: ServerSettingsS, relPath: string): Pro
     }
 
     await fs.rm(resolved, { recursive: true, force: false });
+}
+
+export async function streamPathDownload(server: ServerSettingsS, res: Response, relPath: string): Promise<void> {
+    const { resolved } = await resolvePath(server, relPath);
+    const name = path.basename(resolved);
+
+    const stat = await fs.stat(resolved);
+    if (stat.isDirectory()) {
+        await streamZip(res, `${name}.zip`, [{ src: resolved, name }]);
+        return;
+    }
+
+    res.download(resolved, name, { dotfiles: "allow" });
 }
 
 export async function resolveUploadDir(server: ServerSettingsS, relPath: string): Promise<string> {

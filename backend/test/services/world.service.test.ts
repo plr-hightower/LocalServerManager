@@ -17,7 +17,7 @@ vi.mock('../../src/services/game.service.js', () => ({
   getManifest: vi.fn(),
 }))
 
-import { streamWorldDownload } from '../../src/services/world.service.js'
+import { streamWorldDownload, streamZip } from '../../src/services/world.service.js'
 import { getManifest } from '../../src/services/game.service.js'
 
 const baseServer: ServerSettingsS = {
@@ -80,6 +80,28 @@ beforeEach(() => {
   vi.mocked(getManifest).mockResolvedValue(emptyVolumeManifest)
   mocks.volume.inspect.mockResolvedValue({ Mountpoint: '/var/lib/docker/volumes/test/_data' })
   mocks.dockerInstance.getVolume.mockReturnValue(mocks.volume)
+})
+
+describe('streamZip', () => {
+  it('sets Content-Type header to application/zip', async () => {
+    const res = mockRes()
+    await streamZip(res, 'region.zip', [])
+    expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/zip')
+  })
+
+  it('offers the given file name to the browser', async () => {
+    const res = mockRes()
+    await streamZip(res, 'region.zip', [])
+    expect(res.setHeader).toHaveBeenCalledWith(
+      'Content-Disposition',
+      'attachment; filename="region.zip"'
+    )
+  })
+
+  it('resolves without throwing when there are no directories', async () => {
+    const res = mockRes()
+    await expect(streamZip(res, 'empty.zip', [])).resolves.not.toThrow()
+  })
 })
 
 describe('streamWorldDownload', () => {
