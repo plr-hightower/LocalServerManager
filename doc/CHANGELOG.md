@@ -3,6 +3,14 @@
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Changed
+
+## [0.5.8] 5 September 2026
+
+### Added
 - Added themes that are stored in local storage.
 - Added Name and Icon (finally).
 - Added 5 themes.
