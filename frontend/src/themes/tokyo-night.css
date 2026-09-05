@@ -1,0 +1,23 @@
+:root[data-theme='tokyo-night'] {
+    --color-bg: #1a1b26;
+    --color-surface: #24283b;
+    --color-surface-2: #292e42;
+    --color-border: #3b4261;
+    --color-hover: #2f344d;
+
+    --color-text: #c0caf5;
+    --color-muted: #8f96b7;
+    --color-on-accent: #1a1b26;
+    --color-on-status: #1a1b26;
+
+    --color-primary: #7aa2f7;
+    --color-primary-hover: #9ab4f9;
+    --color-danger: #f7768e;
+    --color-danger-hover: #ff8fa3;
+
+    --status-started: #9ece6a;
+    --status-starting: #e0af68;
+    --status-stopped: #7d84a1;
+    --status-stopping: #e0af68;
+    --status-error: #f7768e;
+}

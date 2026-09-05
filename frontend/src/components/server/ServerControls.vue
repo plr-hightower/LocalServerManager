@@ -3,12 +3,12 @@
         <button v-if="!isRunning" class="btn btn--primary btn--sm" :disabled="pending" @click="start">
             {{ pending ? '…' : 'Start' }}
         </button>
-        <button v-else class="btn btn--ghost btn--sm" :disabled="pending" @click="stop">
+        <button v-else class="btn btn--sm" :disabled="pending" @click="stop">
             {{ pending ? '…' : 'Stop' }}
         </button>
         <button
             v-if="showDownload && canDownload"
-            class="btn btn--accent btn--sm"
+            class="btn btn--primary btn--sm"
             :disabled="downloadPending"
             @click="download"
         >

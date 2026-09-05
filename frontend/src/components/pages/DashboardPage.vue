@@ -37,6 +37,6 @@
     width: 100%;
     height: 100%;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius);
 }
 </style>
