@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### Added
+- Added themes that are stored in local storage.
+- Added Name and Icon (finally).
+- Added 5 themes.
 
 ### Fixed
 

@@ -1,0 +1,24 @@
+:root,
+:root[data-theme='night-sky'] {
+    --color-bg: #0b0914;
+    --color-surface: #13102a;
+    --color-surface-2: #1c183a;
+    --color-border: #2c2650;
+    --color-hover: #211b40;
+
+    --color-text: #ede9ff;
+    --color-muted: #9086b8;
+    --color-on-accent: #ffffff;
+    --color-on-status: #ffffff;
+
+    --color-primary: #0044c1;
+    --color-primary-hover: #0051ff;
+    --color-danger: #8b1f1f;
+    --color-danger-hover: #a52424;
+
+    --status-started: #46a758;
+    --status-starting: #f5a623;
+    --status-stopped: #8b4545;
+    --status-stopping: #f5a623;
+    --status-error: #e5484d;
+}

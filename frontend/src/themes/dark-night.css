@@ -1,0 +1,23 @@
+:root[data-theme='dark-night'] {
+    --color-bg: #000000;
+    --color-surface: #070707;
+    --color-surface-2: #101010;
+    --color-border: #232323;
+    --color-hover: #191919;
+
+    --color-text: #ededed;
+    --color-muted: #8e8e8e;
+    --color-on-accent: #ffffff;
+    --color-on-status: #ffffff;
+
+    --color-primary: #1e3a8a;
+    --color-primary-hover: #2549ab;
+    --color-danger: #7f1d1d;
+    --color-danger-hover: #992424;
+
+    --status-started: #2f6b3a;
+    --status-starting: #7a5a13;
+    --status-stopped: #4a4a4a;
+    --status-stopping: #7a5a13;
+    --status-error: #8c2225;
+}

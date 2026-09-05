@@ -9,10 +9,10 @@
             <div class="server-card__body">
                 <div class="server-card__actions actions-row">
                     <ServerControls :server="server" show-download />
-                    <RouterLink class="btn btn--sm btn--accent" :to="`/servers/${server.core_settings.server_id}/files`">
+                    <RouterLink class="btn btn--sm btn--primary" :to="`/servers/${server.core_settings.server_id}/files`">
                         Manage Files
                     </RouterLink>
-                    <button v-if="!recreating" class="btn btn--sm btn--ghost" @click="startRecreate">
+                    <button v-if="!recreating" class="btn btn--sm" @click="startRecreate">
                         Apply Settings
                     </button>
                     <button v-if="!confirming" class="btn btn--sm btn--danger" @click="confirming = true">
@@ -22,10 +22,10 @@
 
                 <form v-if="recreating" class="server-card__actions delete-confirm" @submit.prevent="onRecreate">
                     <input class="input" type="password" v-model="recreatePassword" placeholder="Manager password" autocomplete="off" />
-                    <button class="btn btn--sm btn--accent" type="submit" :disabled="applying || !recreatePassword">
+                    <button class="btn btn--sm btn--primary" type="submit" :disabled="applying || !recreatePassword">
                         {{ applying ? 'Rebuilding…' : 'Rebuild container' }}
                     </button>
-                    <button class="btn btn--sm btn--ghost" type="button" @click="cancelRecreate">Cancel</button>
+                    <button class="btn btn--sm" type="button" @click="cancelRecreate">Cancel</button>
                 </form>
                 <p v-if="recreating" class="hint">
                     Edit the settings below, then rebuild. The world is kept, the port stays the same,
@@ -38,7 +38,7 @@
                     <button class="btn btn--sm btn--danger" type="submit" :disabled="deleting || !password">
                         {{ deleting ? 'Deleting…' : 'Confirm delete' }}
                     </button>
-                    <button class="btn btn--sm btn--ghost" type="button" @click="cancelDelete">Cancel</button>
+                    <button class="btn btn--sm" type="button" @click="cancelDelete">Cancel</button>
                 </form>
                 <p v-if="deleteError" class="field-error">{{ deleteError }}</p>
 
@@ -184,7 +184,7 @@ async function onDelete() {
     max-width: 220px;
 }
 .hint {
-    color: var(--fg-muted, #888);
+    color: var(--color-muted);
     font-size: 0.85rem;
     margin-bottom: var(--gap-md);
 }

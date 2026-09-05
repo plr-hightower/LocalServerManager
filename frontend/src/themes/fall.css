@@ -1,0 +1,23 @@
+:root[data-theme='fall'] {
+    --color-bg: #140d08;
+    --color-surface: #1e1410;
+    --color-surface-2: #2a1d16;
+    --color-border: #3d2a1f;
+    --color-hover: #33231a;
+
+    --color-text: #f6e9dd;
+    --color-muted: #b39680;
+    --color-on-accent: #ffffff;
+    --color-on-status: #ffffff;
+
+    --color-primary: #a8380a;
+    --color-primary-hover: #d0460d;
+    --color-danger: #8f1d2f;
+    --color-danger-hover: #ab2439;
+
+    --status-started: #617b2e;
+    --status-starting: #976c22;
+    --status-stopped: #7a5240;
+    --status-stopping: #976c22;
+    --status-error: #c0392f;
+}
