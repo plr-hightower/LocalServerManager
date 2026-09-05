@@ -29,7 +29,7 @@
 
             <div class="server-card__actions">
                 <ServerControls :server="server" />
-                <button class="btn btn--ghost btn--sm" @click="emit('open', server)">Details</button>
+                <button class="btn btn--sm" @click="emit('open', server)">Details</button>
             </div>
         </div>
     </div>

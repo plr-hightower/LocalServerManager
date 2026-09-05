@@ -86,7 +86,7 @@
                     <button type="submit" class="btn btn--primary" :disabled="submitting">
                         {{ submitting ? 'Creating…' : 'Create' }}
                     </button>
-                    <button type="button" class="btn btn--ghost" @click="router.push('/serverList')">Cancel</button>
+                    <button type="button" class="btn" @click="router.push('/serverList')">Cancel</button>
                 </div>
                 <p v-if="error" class="field-error">{{ error }}</p>
             </div>
@@ -173,13 +173,13 @@ async function submit() {
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--accent, #5b9dd9);
+    color: var(--color-primary);
     opacity: 0.9;
 }
 .eye-btn:hover {
     opacity: 1;
 }
 .eye-btn--off {
-    color: var(--text-muted, #8a8f98);
+    color: var(--color-muted);
 }
 </style>

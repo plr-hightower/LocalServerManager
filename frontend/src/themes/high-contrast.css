@@ -1,0 +1,23 @@
+:root[data-theme='high-contrast'] {
+    --color-bg: #000000;
+    --color-surface: #000000;
+    --color-surface-2: #0d0d0d;
+    --color-border: #d4d4d4;
+    --color-hover: #262626;
+
+    --color-text: #ffffff;
+    --color-muted: #e6e6e6;
+    --color-on-accent: #000000;
+    --color-on-status: #000000;
+
+    --color-primary: #ffd400;
+    --color-primary-hover: #ffe75c;
+    --color-danger: #ff6b6b;
+    --color-danger-hover: #ff9d9d;
+
+    --status-started: #4ade80;
+    --status-starting: #ffd400;
+    --status-stopped: #c4c4c4;
+    --status-stopping: #ffd400;
+    --status-error: #ff6b6b;
+}

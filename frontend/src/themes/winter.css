@@ -1,0 +1,23 @@
+:root[data-theme='winter'] {
+    --color-bg: #0a0f16;
+    --color-surface: #121a24;
+    --color-surface-2: #1a2432;
+    --color-border: #29394d;
+    --color-hover: #1f2c3c;
+
+    --color-text: #e4edf7;
+    --color-muted: #8ba0b8;
+    --color-on-accent: #ffffff;
+    --color-on-status: #ffffff;
+
+    --color-primary: #0b5f77;
+    --color-primary-hover: #0f7f9e;
+    --color-danger: #9e2f3f;
+    --color-danger-hover: #bb3a4c;
+
+    --status-started: #2f7f70;
+    --status-starting: #906e28;
+    --status-stopped: #4a5f73;
+    --status-stopping: #906e28;
+    --status-error: #b3414f;
+}

@@ -32,10 +32,10 @@
                     </p>
 
                     <div class="breadcrumb">
-                        <button class="btn btn--ghost btn--sm" :disabled="fm.atRoot.value" @click="fm.goTo(-1)">volumes</button>
+                        <button class="btn btn--sm" :disabled="fm.atRoot.value" @click="fm.goTo(-1)">volumes</button>
                         <template v-for="(seg, i) in fm.segments.value" :key="i">
                             <span class="breadcrumb__sep">/</span>
-                            <button class="btn btn--ghost btn--sm" @click="fm.goTo(i)">{{ seg }}</button>
+                            <button class="btn btn--sm" @click="fm.goTo(i)">{{ seg }}</button>
                         </template>
                     </div>
 
@@ -55,7 +55,7 @@
                                 <td class="mono">{{ entry.type === 'dir' ? '📁' : '📄' }} {{ entry.name }}</td>
                                 <td>{{ entry.type === 'dir' ? '' : formatSize(entry.size) }}</td>
                                 <td class="server-card__actions">
-                                    <button class="btn btn--ghost btn--sm" @click.stop="download(entry)">
+                                    <button class="btn btn--sm" @click.stop="download(entry)">
                                         Download
                                     </button>
                                     <button
