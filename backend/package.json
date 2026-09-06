@@ -37,5 +37,11 @@
     "tsx": "^4.19.3",
     "typescript": "^5.9.3",
     "vitest": "^4.1.9"
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": "Alexandre Dmitriev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plr-hightower/HightowerServers.git"
   }
 }
