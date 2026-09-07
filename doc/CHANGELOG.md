@@ -3,6 +3,14 @@
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Changed
+
+## [0.5.9] 6 September 2026
+
+### Added
 - Added Readme
 - Added License
 - Added Securty and contributing
