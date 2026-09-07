@@ -3,6 +3,12 @@
 ## [Unreleased]
 
 ### Added
+- Added Readme
+- Added License
+- Added Securty and contributing
+- Added .env.example documenting every environment variable.
+- Added a footer showing the version, license, and a source-code link.
+- Added Ko-fi sponsor button (.github/FUNDING.yml).
 
 ### Fixed
 

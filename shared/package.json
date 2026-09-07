@@ -13,5 +13,11 @@
   },
   "scripts": {
     "build": "tsc"
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": "Alexandre Dmitriev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plr-hightower/HightowerServers.git"
   }
 }

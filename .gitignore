@@ -1,5 +1,7 @@
 #images are too heavy, hence they will be manually populated
 images/*.tar
+# state file written by scripts/fetch_all_images.sh
+images/.image-refs
 
 # Logs
 logs
