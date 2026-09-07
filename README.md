@@ -13,6 +13,13 @@
 
 ---
 
+<div align="center">
+  <a href="https://ko-fi.com/plrhightower"><img alt="Support this project on Ko-fi" src="https://img.shields.io/badge/Ko--fi-Support%20this%20project-FF5E5B?logo=ko-fi&logoColor=white&style=for-the-badge"></a>
+  <p><em>Free and open source forever , if it's useful to you, a coffee helps keep it going.</em></p>
+</div>
+
+---
+
 Create a Minecraft, Valheim, or Palworld server from a form in your browser, then start, stop, monitor, and back it up from the same place. Each server is a Docker container on the host; worlds live in Docker volumes you can browse, upload to, and download as a zip straight from the UI.
 
 **Features**
