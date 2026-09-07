@@ -1,6 +1,6 @@
 {
   "name": "hightower-servers",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "private": true,
   "workspaces": [
     "frontend",
@@ -16,7 +16,6 @@
     "build:all": "npm run build:shared && npm run build:backend && npm run build:frontend"
   },
   "dependencies": {
-    "all": "^0.0.0",
     "dockerode": "^4.0.10",
     "express": "^5.2.1"
   },
@@ -25,5 +24,16 @@
     "typescript": "^5.9.3",
     "vite": "^7.0.0",
     "vue-tsc": "^2.0.0"
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": "Alexandre Dmitriev",
+  "description": "Self-hosted web UI for running dedicated game servers (Minecraft, Valheim, Palworld) as Docker containers.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plr-hightower/HightowerServers.git"
+  },
+  "homepage": "https://github.com/plr-hightower/HightowerServers#readme",
+  "bugs": {
+    "url": "https://github.com/plr-hightower/HightowerServers/issues"
   }
 }
