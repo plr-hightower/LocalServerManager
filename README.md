@@ -44,7 +44,25 @@ This is a **trusted-LAN tool, not an internet-facing control panel.**
 - **The backend mounts `/var/run/docker.sock` and runs as `root`.** That is, by design, full control of the Docker daemon , which is equivalent to root on the host. Anyone who can reach the API can, in effect, run arbitrary containers on your machine.
 - **MySQL is published on the host** (port 3306 by default) and the database container uses `DB_PASSWORD` as its **root** password.
 
-Run it on a machine you own, on a network you trust. Do not port-forward it. If you need remote access, put it behind a VPN (WireGuard, Tailscale) or an authenticating reverse proxy , not a bare port forward.
+Run it on a machine you own, on a network you trust. **Do not port-forward it.** To play with friends who aren't on your LAN, use a VPN , see [Remote access: playing with friends](#remote-access-playing-with-friends) below. An authenticating reverse proxy is the other acceptable option. A bare port forward is not.
+
+---
+
+## Quick start
+
+Linux host with Docker and the Compose plugin, then:
+
+```bash
+git clone https://github.com/plr-hightower/HightowerServers.git
+cd HightowerServers
+cp .env.example .env && $EDITOR .env   # set DB_PASSWORD
+./scripts/fetch_all_images.sh          # pull the game images (a few GB, one-off)
+./scripts/init.sh                      # build, start, migrate
+```
+
+Open <http://localhost>, hit **Create Server**, pick a game, and you're running. Playing with friends off your LAN? Set up a [VPN](#remote-access-playing-with-friends) , don't port-forward.
+
+Details, requirements, and configuration below.
 
 ---
 
@@ -58,22 +76,15 @@ Run it on a machine you own, on a network you trust. Do not port-forward it. If 
 
 ## Setup
 
-```bash
-git clone https://github.com/plr-hightower/HightowerServers.git
-cd HightowerServers
+The three commands in the quick start above are the whole install:
 
-# 1. Configure
-cp .env.example .env
-$EDITOR .env            # at minimum, set DB_PASSWORD
+| Command | What it does |
+|---|---|
+| `cp .env.example .env` | Creates your local config. **`DB_PASSWORD` is the only required value**; every other variable has a working default |
+| `./scripts/fetch_all_images.sh` | Pulls each game's Docker image from its publisher, saves it to `images/`, and loads it. One-off per machine, several GB |
+| `./scripts/init.sh` | Starts Docker if needed, loads the saved images, runs `docker compose up -d --build`, then applies migrations |
 
-# 2. Fetch the game server images (pulls from Docker Hub, saves them to images/)
-./scripts/fetch_all_images.sh
-
-# 3. Bring everything up: load images, build and start containers, run migrations
-./scripts/init.sh
-```
-
-Then open:
+Once it's up:
 
 | | |
 |---|---|
@@ -107,6 +118,50 @@ Every variable lives in `.env`; `.env.example` documents all of them. The ones t
 | `RAM_SAFETY_MARGIN_MB` | `512` | Host RAM kept free; creation is refused if a server would eat into it |
 | `MAX_UPLOAD_FILE_MB` | `32768` | Upload size limit for the file manager |
 | `LOG_LEVEL` | `info` | Pino log level |
+
+## Remote access: playing with friends
+
+The web UI has no login and the backend controls Docker, so it must never be exposed to the internet. But your friends still need to reach the game servers. **A VPN solves both problems at once:** your friends' machines join a private network with the host, the game ports become reachable without a single port forward, and nothing is published to the open internet.
+
+Any VPN works , LSM neither knows nor cares which one you use. It just serves HTTP on port 80 and the game servers listen on their own ports; whatever puts your players on the same network as the host is fine.
+
+### Pick a VPN
+
+| Option | Type | Why you'd pick it |
+|---|---|---|
+| [Tailscale](https://tailscale.com/) | Mesh VPN (hosted control plane) | Easiest by far. Free tier covers a friend group, works through almost any NAT, gives each machine a DNS name. Best default if you just want it working |
+| [NetBird](https://netbird.io/) | Mesh VPN (hosted or self-hosted) | Similar experience to Tailscale, open source, can be fully self-hosted later |
+| [ZeroTier](https://www.zerotier.com/) | Mesh VPN (hosted control plane) | Long-established alternative; network-level rather than device-identity model |
+| [Headscale](https://headscale.net/) | Self-hosted Tailscale control plane | You want the Tailscale clients but no third party holding your network's identity |
+| [WireGuard](https://www.wireguard.com/) | Plain point-to-point VPN | Maximum control, no third party at all. You configure keys and peers by hand, and need a reachable endpoint |
+| Authenticating reverse proxy | Not a VPN | Only sensible if you want the *web UI* reachable publicly with a real login in front. Game ports still need separate handling |
+
+**Mesh VPNs carry all TCP and UDP traffic**, which matters here, because LSM assigns ports itself and the games don't agree on a protocol:
+
+| Game | Protocol | Ports assigned from |
+|---|---|---|
+| Minecraft | TCP | 25565 upward, one per server |
+| Valheim | UDP | 7000 upward, **two** per server (`port` and `port+1`) |
+| Palworld | UDP | 8211 upward, one per server |
+
+Each server's actual port is shown on its card in the UI. Over a mesh VPN all of this works untouched , no per-port setup, no forwarding.
+
+### The setup, whichever you choose
+
+1. **Install the VPN on the host** , the machine running LSM , and bring it up. Confirm it got a VPN address (e.g. Tailscale's `100.x.y.z` range).
+2. **Install the same VPN on each player's device** and have them sign in or join.
+3. **Authorize them onto your network.** Every product words this differently , Tailscale shares a single device by invite link, ZeroTier authorizes members into a network ID, WireGuard means adding each peer's public key. Whatever the mechanism, only add people you actually trust: **anyone on the VPN can reach the LSM web UI, and the UI has no login.**
+4. **Find the host's VPN address or name.** Most mesh VPNs also give you a hostname (Tailscale's MagicDNS makes the host reachable as just `hostname`), which is friendlier than an address that can change.
+5. **Open the UI** at `http://<host-vpn-name-or-address>` , for example `http://myhost/serverList`. That's the same interface you'd see locally.
+6. **Connect game clients** to `<host-vpn-name-or-address>:<port>`, where the port is shown on each server's card in the UI. In Minecraft that goes in *Add Server*; in Valheim, *Join Game → Add server*.
+
+> **Tip for the operator:** don't hand your players raw addresses that can change , give them the hostname. And write your friends a short guide with *your* network's specifics; a screenshot-by-screenshot walkthrough saves you repeating yourself. Keep any invite link private to the people you're inviting , it is effectively a key to your network.
+
+### Security notes
+
+- A VPN puts the *whole* LSM UI in reach of everyone you add, with no password on it. Per-server manager passwords still gate destructive actions, and `ADMIN_MASTER_PASSWORD` gates admin ones , set both if your VPN includes people you wouldn't hand your host's root password to.
+- Don't combine a VPN with a port forward "just in case". The point is that nothing is publicly reachable.
+- If you enable the in-app update button, remember that anyone on the VPN can reach that endpoint too, and it's gated only by the master password.
 
 ## Development
 
