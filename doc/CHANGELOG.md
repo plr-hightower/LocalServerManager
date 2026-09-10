@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Updated vpn section.
 
 ### Fixed
 
