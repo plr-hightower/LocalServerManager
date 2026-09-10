@@ -17,6 +17,7 @@
 - Added .env.example documenting every environment variable.
 - Added a footer showing the version, license, and a source-code link.
 - Added Ko-fi sponsor button (.github/FUNDING.yml).
+- Added a README section on remote access, covering VPN options (Tailscale, NetBird, ZeroTier, Headscale, WireGuard) and per-game port/protocol details.
 
 ### Fixed
 
