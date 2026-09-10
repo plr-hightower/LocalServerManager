@@ -3,6 +3,14 @@
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Changed
+
+## [1.0.0] 9 September 2026
+
+### Added
 - Updated vpn section.
 
 ### Fixed
