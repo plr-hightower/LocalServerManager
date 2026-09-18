@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ServerSettingsS } from '@hightower/shared';
+import type { ServerSettingsS } from '@lsm/shared';
 import ServerControls from '@/components/server/ServerControls.vue';
 
 const props = defineProps<{

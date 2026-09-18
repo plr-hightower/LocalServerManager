@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { validateQuery } from '../services/validate.service.js';
-import { WorldRequestSchema } from '@hightower/shared';
+import { WorldRequestSchema } from '@lsm/shared';
 import { worldController } from '../controllers/world.controller.js';
 
 const router = Router();

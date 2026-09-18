@@ -1,4 +1,4 @@
-import { ServerSettingsS, FileEntryS, FileOwnerS } from "@hightower/shared";
+import { ServerSettingsS, FileEntryS, FileOwnerS } from "@lsm/shared";
 import type { Response } from "express";
 import fs from "fs/promises";
 import path from "path";

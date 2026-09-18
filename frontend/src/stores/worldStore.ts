@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { ServerSettingsS } from '@hightower/shared';
+import type { ServerSettingsS } from '@lsm/shared';
 import { api } from '@/services/http';
 
 export type DownloadTarget = { vol?: number; path?: string; isDir?: boolean };

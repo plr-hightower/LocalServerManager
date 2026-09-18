@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { ServerSettingsS } from "@hightower/shared";
+import { ServerSettingsS } from "@lsm/shared";
 
 const BCRYPT_ROUNDS = 10;
 

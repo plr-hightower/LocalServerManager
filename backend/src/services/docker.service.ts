@@ -1,4 +1,4 @@
-import { ContainerStatS, ContainerStatSchema, GameManifestS, ServerSettingsS, StatusE, toBind } from '@hightower/shared';
+import { ContainerStatS, ContainerStatSchema, GameManifestS, ServerSettingsS, StatusE, toBind } from '@lsm/shared';
 import Docker, { Container } from 'dockerode';
 import { DbService } from '../repository/db.repository.js';
 

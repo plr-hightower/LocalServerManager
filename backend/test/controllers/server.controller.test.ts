@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { Request, Response } from 'express'
-import type { ServerSettingsS } from '@hightower/shared'
+import type { ServerSettingsS } from '@lsm/shared'
 import os from 'os'
 
 vi.mock('../../src/repository/db.repository.js', () => ({
