@@ -16,7 +16,7 @@
     "build:all": "npm run build:shared && npm run build:backend && npm run build:frontend"
   },
   "dependencies": {
-    "dockerode": "^4.0.10",
+    "dockerode": "^5.0.1",
     "express": "^5.2.1"
   },
   "devDependencies": {
