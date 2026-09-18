@@ -1,4 +1,4 @@
-import { GameManifestS, ServerSettingsS, toBind } from "@hightower/shared";
+import { GameManifestS, ServerSettingsS, toBind } from "@lsm/shared";
 import Docker from 'dockerode';
 import type { Response } from 'express';
 import { getManifest } from "./game.service.js";

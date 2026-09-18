@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { DbService } from '../repository/db.repository.js';
 import { ZodError } from 'zod';
-import { WorldRequestSchema } from '@hightower/shared';
-import type { WorldRequestS } from '@hightower/shared';
+import { WorldRequestSchema } from '@lsm/shared';
+import type { WorldRequestS } from '@lsm/shared';
 import { streamWorldDownload} from '../services/world.service.js';
 import { streamPathDownload } from '../services/file.service.js';
 

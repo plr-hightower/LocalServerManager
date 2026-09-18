@@ -112,7 +112,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import type { FileEntryS } from '@hightower/shared';
+import type { FileEntryS } from '@lsm/shared';
 import { useRoute } from 'vue-router';
 import { useServerStore } from '@/stores/serverStore';
 import { useFileManager } from '@/composables/useFileManager';

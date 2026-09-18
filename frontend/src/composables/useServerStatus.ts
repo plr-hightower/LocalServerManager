@@ -1,5 +1,5 @@
 import { ref, toValue, type MaybeRefOrGetter } from 'vue';
-import { StatusEnum, type ServerSettingsS, type StatusE } from '@hightower/shared';
+import { StatusEnum, type ServerSettingsS, type StatusE } from '@lsm/shared';
 import { useServerStore } from '@/stores/serverStore';
 
 export function useServerStatus(server: MaybeRefOrGetter<ServerSettingsS>) {

@@ -27,7 +27,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import type { ServerSettingsS } from '@hightower/shared';
+import type { ServerSettingsS } from '@lsm/shared';
 import ServerCard from '@/components/server/ServerCard.vue';
 import { useServerStore } from '@/stores/serverStore';
 

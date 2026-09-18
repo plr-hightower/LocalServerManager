@@ -1,5 +1,5 @@
 /*
- * Hightower Servers , Local Server Manager
+ * Local Server Manager (LSM)
  * Copyright (C) 2026 Alexandre Dmitriev
  *
  * This program is free software: you can redistribute it and/or modify it

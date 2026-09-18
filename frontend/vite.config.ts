@@ -14,7 +14,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      '@hightower/shared': fileURLToPath(new URL('../shared', import.meta.url))
+      '@lsm/shared': fileURLToPath(new URL('../shared', import.meta.url))
     },
   },
   server: {

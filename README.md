@@ -1,8 +1,8 @@
 <div align="center">
   <img src="frontend/LSM.png" alt="Local Server Manager" width="420">
 
-  <h1>Hightower Servers</h1>
-  <p><strong>Local Server Manager (LSM)</strong> , a self-hosted web UI that runs dedicated game servers as Docker containers on your own machine.</p>
+  <h1>Local Server Manager</h1>
+  <p><strong>Local Server Manager (LSM)</strong> — a self-hosted web UI that runs dedicated game servers as Docker containers on your own machine.</p>
 
   <p>
     <a href="LICENSE"><img alt="License: AGPL v3 or later" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg"></a>
@@ -15,7 +15,7 @@
 
 <div align="center">
   <a href="https://ko-fi.com/plrhightower"><img alt="Support this project on Ko-fi" src="https://img.shields.io/badge/Ko--fi-Support%20this%20project-FF5E5B?logo=ko-fi&logoColor=white&style=for-the-badge"></a>
-  <p><em>Free and open source forever , if it's useful to you, a coffee helps keep it going.</em></p>
+  <p><em>Free and open source forever — if it's useful to you, a coffee helps keep it going.</em></p>
 </div>
 
 ---
@@ -32,7 +32,7 @@ Create a Minecraft, Valheim, or Palworld server from a form in your browser, the
 - Container logs through an embedded [Dozzle](https://dozzle.dev/) at `/dozzle`.
 - Seven themes, remembered in local storage.
 
-**Stack** , Vue 3 + Vite + Pinia behind nginx · Express 5 + TypeScript + dockerode · MySQL 8 · zod schemas in a shared npm workspace · Vitest on both sides.
+**Stack** — Vue 3 + Vite + Pinia behind nginx · Express 5 + TypeScript + dockerode · MySQL 8 · zod schemas in a shared npm workspace · Vitest on both sides.
 
 ---
 
@@ -41,10 +41,10 @@ Create a Minecraft, Valheim, or Palworld server from a form in your browser, the
 This is a **trusted-LAN tool, not an internet-facing control panel.**
 
 - **There is no login.** The web UI is unauthenticated. Anyone who can reach port 80 can create and delete game servers. The per-server manager password only gates management actions on an individual server.
-- **The backend mounts `/var/run/docker.sock` and runs as `root`.** That is, by design, full control of the Docker daemon , which is equivalent to root on the host. Anyone who can reach the API can, in effect, run arbitrary containers on your machine.
+- **The backend mounts `/var/run/docker.sock` and runs as `root`.** That is, by design, full control of the Docker daemon — which is equivalent to root on the host. Anyone who can reach the API can, in effect, run arbitrary containers on your machine.
 - **MySQL is published on the host** (port 3306 by default) and the database container uses `DB_PASSWORD` as its **root** password.
 
-Run it on a machine you own, on a network you trust. **Do not port-forward it.** To play with friends who aren't on your LAN, use a VPN , see [Remote access: playing with friends](#remote-access-playing-with-friends) below. An authenticating reverse proxy is the other acceptable option. A bare port forward is not.
+Run it on a machine you own, on a network you trust. **Do not port-forward it.** To play with friends who aren't on your LAN, use a VPN — see [Remote access: playing with friends](#remote-access-playing-with-friends) below. An authenticating reverse proxy is the other acceptable option. A bare port forward is not.
 
 ---
 
@@ -60,7 +60,7 @@ cp .env.example .env && $EDITOR .env   # set DB_PASSWORD
 ./scripts/init.sh                      # build, start, migrate
 ```
 
-Open <http://localhost>, hit **Create Server**, pick a game, and you're running. Playing with friends off your LAN? Set up a [VPN](#remote-access-playing-with-friends) , don't port-forward.
+Open <http://localhost>, hit **Create Server**, pick a game, and you're running. Playing with friends off your LAN? Set up a [VPN](#remote-access-playing-with-friends) — don't port-forward.
 
 Details, requirements, and configuration below.
 
@@ -70,7 +70,7 @@ Details, requirements, and configuration below.
 
 - Linux host (the scripts use bash, `systemctl`, and host paths such as `/var/lib/docker/volumes`)
 - [Docker Engine](https://docs.docker.com/engine/install/) with the Compose plugin (`docker compose`), and permission to use it (`sudo`, or your user in the `docker` group)
-- Node.js 20+ and npm , only needed for local development; the containers build their own
+- Node.js 20+ and npm — only needed for local development; the containers build their own
 - Disk space for game images and worlds (the Minecraft image alone is a few GB)
 - Enough RAM for the servers you intend to run, plus headroom for the host
 
@@ -93,13 +93,13 @@ Once it's up:
 | Container logs | <http://localhost/dozzle> |
 | Database | `localhost:3306` |
 
-`init.sh` is idempotent , re-run it after pulling changes and it will rebuild the containers and apply any new migrations. Migrations are tracked in a `migrations` table, so applied files are skipped.
+`init.sh` is idempotent — re-run it after pulling changes and it will rebuild the containers and apply any new migrations. Migrations are tracked in a `migrations` table, so applied files are skipped.
 
 ### Why images are fetched separately
 
 Game server images are **not** included in this repository, and `images/*.tar` is git-ignored. `fetch_all_images.sh` reads the image reference out of each `backend/src/services/games/*.service.ts`, pulls it, `docker save`s it to `images/<game>.tar`, and loads it. That keeps the repo small and means you pull each upstream image from its own publisher, under its own license, rather than getting a redistributed copy from me.
 
-If a game directory `docker/<game>/Dockerfile` exists, that image is **built** locally instead of pulled , the hook for running a patched fork of an upstream image.
+If a game directory `docker/<game>/Dockerfile` exists, that image is **built** locally instead of pulled — the hook for running a patched fork of an upstream image.
 
 ## Configuration
 
@@ -107,8 +107,8 @@ Every variable lives in `.env`; `.env.example` documents all of them. The ones t
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `DB_PASSWORD` | , | **Required.** MySQL user password *and* the database container's root password |
-| `DB_USER` / `DB_NAME` | `hightower-admin` / `hightower` | Database credentials |
+| `DB_PASSWORD` | — | **Required.** MySQL user password *and* the database container's root password |
+| `DB_USER` / `DB_NAME` | `lsm-admin` / `lsm` | Database credentials |
 | `DB_HOST` | `127.0.0.1` | Only used when running the backend outside Docker; Compose overrides it to `database` |
 | `DB_EXPOSE_PORT` | `3306` | Published MySQL port, also the backend's connection port |
 | `MIGRATIONS_DIR` | `./backend/src/db/migrations` | Where `migration.sh` looks for `.sql` files |
@@ -123,7 +123,7 @@ Every variable lives in `.env`; `.env.example` documents all of them. The ones t
 
 The web UI has no login and the backend controls Docker, so it must never be exposed to the internet. But your friends still need to reach the game servers. **A VPN solves both problems at once:** your friends' machines join a private network with the host, the game ports become reachable without a single port forward, and nothing is published to the open internet.
 
-Any VPN works , LSM neither knows nor cares which one you use. It just serves HTTP on port 80 and the game servers listen on their own ports; whatever puts your players on the same network as the host is fine.
+Any VPN works — LSM neither knows nor cares which one you use. It just serves HTTP on port 80 and the game servers listen on their own ports; whatever puts your players on the same network as the host is fine.
 
 ### Pick a VPN
 
@@ -144,22 +144,22 @@ Any VPN works , LSM neither knows nor cares which one you use. It just serves HT
 | Valheim | UDP | 7000 upward, **two** per server (`port` and `port+1`) |
 | Palworld | UDP | 8211 upward, one per server |
 
-Each server's actual port is shown on its card in the UI. Over a mesh VPN all of this works untouched , no per-port setup, no forwarding.
+Each server's actual port is shown on its card in the UI. Over a mesh VPN all of this works untouched — no per-port setup, no forwarding.
 
 ### The setup, whichever you choose
 
-1. **Install the VPN on the host** , the machine running LSM , and bring it up. Confirm it got a VPN address (e.g. Tailscale's `100.x.y.z` range).
+1. **Install the VPN on the host** — the machine running LSM — and bring it up. Confirm it got a VPN address (e.g. Tailscale's `100.x.y.z` range).
 2. **Install the same VPN on each player's device** and have them sign in or join.
-3. **Authorize them onto your network.** Every product words this differently , Tailscale shares a single device by invite link, ZeroTier authorizes members into a network ID, WireGuard means adding each peer's public key. Whatever the mechanism, only add people you actually trust: **anyone on the VPN can reach the LSM web UI, and the UI has no login.**
+3. **Authorize them onto your network.** Every product words this differently — Tailscale shares a single device by invite link, ZeroTier authorizes members into a network ID, WireGuard means adding each peer's public key. Whatever the mechanism, only add people you actually trust: **anyone on the VPN can reach the LSM web UI, and the UI has no login.**
 4. **Find the host's VPN address or name.** Most mesh VPNs also give you a hostname (Tailscale's MagicDNS makes the host reachable as just `hostname`), which is friendlier than an address that can change.
-5. **Open the UI** at `http://<host-vpn-name-or-address>` , for example `http://myhost/serverList`. That's the same interface you'd see locally.
+5. **Open the UI** at `http://<host-vpn-name-or-address>` — for example `http://myhost/serverList`. That's the same interface you'd see locally.
 6. **Connect game clients** to `<host-vpn-name-or-address>:<port>`, where the port is shown on each server's card in the UI. In Minecraft that goes in *Add Server*; in Valheim, *Join Game → Add server*.
 
-> **Tip for the operator:** don't hand your players raw addresses that can change , give them the hostname. And write your friends a short guide with *your* network's specifics; a screenshot-by-screenshot walkthrough saves you repeating yourself. Keep any invite link private to the people you're inviting , it is effectively a key to your network.
+> **Tip for the operator:** don't hand your players raw addresses that can change — give them the hostname. And write your friends a short guide with *your* network's specifics; a screenshot-by-screenshot walkthrough saves you repeating yourself. Keep any invite link private to the people you're inviting — it is effectively a key to your network.
 
 ### Security notes
 
-- A VPN puts the *whole* LSM UI in reach of everyone you add, with no password on it. Per-server manager passwords still gate destructive actions, and `ADMIN_MASTER_PASSWORD` gates admin ones , set both if your VPN includes people you wouldn't hand your host's root password to.
+- A VPN puts the *whole* LSM UI in reach of everyone you add, with no password on it. Per-server manager passwords still gate destructive actions, and `ADMIN_MASTER_PASSWORD` gates admin ones — set both if your VPN includes people you wouldn't hand your host's root password to.
 - Don't combine a VPN with a port forward "just in case". The point is that nothing is publicly reachable.
 - If you enable the in-app update button, remember that anyone on the VPN can reach that endpoint too, and it's gated only by the master password.
 
@@ -169,7 +169,7 @@ Each server's actual port is shown on its card in the UI. Over a mesh VPN all of
 npm install              # installs all workspaces (frontend, backend, shared)
 
 npm run build:shared     # the shared package must be built before the others resolve it
-npm run dev:backend      # tsx watch , needs DB_HOST=127.0.0.1 and the database container up
+npm run dev:backend      # tsx watch — needs DB_HOST=127.0.0.1 and the database container up
 npm run dev:frontend     # vite dev server
 
 npm test --workspace=backend
@@ -190,7 +190,7 @@ Useful scripts:
 
 1. Add `backend/src/services/games/<game>.service.ts` implementing `IGameService`, with an `image: '<publisher>/<image>:<tag>'` field.
 2. Add its settings schema to `shared/src/`.
-3. Run `./scripts/fetch_all_images.sh` , it discovers the new image reference automatically, no list to update.
+3. Run `./scripts/fetch_all_images.sh` — it discovers the new image reference automatically, no list to update.
 
 Every pull request must update [`doc/CHANGELOG.md`](doc/CHANGELOG.md); CI enforces it. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -237,7 +237,7 @@ Minecraft is a trademark of Mojang Synergies AB / Microsoft. Valheim is a tradem
 
 **You are the server operator, and the game publishers' terms apply to you:**
 
-- Running a Minecraft server means accepting the [Minecraft EULA](https://www.minecraft.net/eula) and Mojang's [commercial usage guidelines](https://www.minecraft.net/usage-guidelines). For convenience this application sets `EULA=TRUE` on the Minecraft container by default , **by creating a Minecraft server with it you are accepting that EULA yourself.** If you don't accept it, don't create Minecraft servers.
+- Running a Minecraft server means accepting the [Minecraft EULA](https://www.minecraft.net/eula) and Mojang's [commercial usage guidelines](https://www.minecraft.net/usage-guidelines). For convenience this application sets `EULA=TRUE` on the Minecraft container by default — **by creating a Minecraft server with it you are accepting that EULA yourself.** If you don't accept it, don't create Minecraft servers.
 - Valheim and Palworld dedicated servers are likewise subject to their publishers' EULAs and server-hosting terms.
 - Nothing here distributes or circumvents any game client, license check, or paid content. Your players still need their own legitimately purchased copies.
 
@@ -245,6 +245,6 @@ Minecraft is a trademark of Mojang Synergies AB / Microsoft. Valheim is a tradem
 
 ## Support this project
 
-If Hightower Servers saves you some time, you can buy me a coffee , it's genuinely appreciated and entirely optional. The software is and stays free.
+If LSM saves you some time, you can buy me a coffee — it's genuinely appreciated and entirely optional. The software is and stays free.
 
 <a href="https://ko-fi.com/plrhightower"><img alt="Support me on Ko-fi" src="https://img.shields.io/badge/Ko--fi-plrhightower-FF5E5B?logo=ko-fi&logoColor=white&style=for-the-badge"></a>

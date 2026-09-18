@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest'
-import type { ServerSettingsS } from '@hightower/shared'
+import type { ServerSettingsS } from '@lsm/shared'
 import { hashManagerPassword, verifyManagerPassword } from '../../src/services/password.service.js'
 
 function serverWith(manager_password: string | null): ServerSettingsS {

@@ -1,5 +1,5 @@
 import { ref, computed, toValue, type MaybeRefOrGetter } from 'vue';
-import type { ServerSettingsS, FileEntryS } from '@hightower/shared';
+import type { ServerSettingsS, FileEntryS } from '@lsm/shared';
 import { useFileStore } from '@/stores/fileStore';
 import { useWorldStore } from '@/stores/worldStore';
 

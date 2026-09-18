@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import type { ServerSettingsS, GameManifestS } from '@hightower/shared'
+import type { ServerSettingsS, GameManifestS } from '@lsm/shared'
 
 const mockManifest: GameManifestS = {
   image: 'itzg/minecraft-server:2024.1.0',

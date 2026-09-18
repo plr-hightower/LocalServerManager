@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { ServerSettingsS, StatusE, CreateServerRequestS, HealthCheckResponseS } from '@hightower/shared';
+import type { ServerSettingsS, StatusE, CreateServerRequestS, HealthCheckResponseS } from '@lsm/shared';
 import { api } from '@/services/http';
 
 export const useServerStore = defineStore('servers', () => {

@@ -14,7 +14,7 @@ const fileStream = await build({
 
 export const logger = pino(
     {
-        name:  'hightower-backend',
+        name:  'lsm-backend',
         level: process.env.LOG_LEVEL ?? 'info',
     },
     pino.multistream([

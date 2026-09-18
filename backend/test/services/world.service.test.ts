@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { PassThrough } from 'node:stream'
-import type { ServerSettingsS, GameManifestS } from '@hightower/shared'
+import type { ServerSettingsS, GameManifestS } from '@lsm/shared'
 import type { Response } from 'express'
 
 const mocks = vi.hoisted(() => {

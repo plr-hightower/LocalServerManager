@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { GameService } from '../../../src/services/games/minecraft.service.js'
-import { RamAllocMbEnum } from '@hightower/shared'
-import type { ServerSettingsS, MinecraftSettingsS } from '@hightower/shared'
+import { RamAllocMbEnum } from '@lsm/shared'
+import type { ServerSettingsS, MinecraftSettingsS } from '@lsm/shared'
 
 const baseServer: ServerSettingsS = {
   core_settings: {

@@ -1,4 +1,4 @@
-import { FileOwnerS, GameManifestS, GameSettingsS, ServerSettingsS } from "@hightower/shared";
+import { FileOwnerS, GameManifestS, GameSettingsS, ServerSettingsS } from "@lsm/shared";
 
 export interface IGameService{
     getGameManifest(gameSettings: ServerSettingsS): Promise<GameManifestS>;

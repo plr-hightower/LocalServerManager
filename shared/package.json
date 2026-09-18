@@ -1,6 +1,6 @@
 {
-  "name": "@hightower/shared",
-  "version": "1.0.0",
+  "name": "@lsm/shared",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
