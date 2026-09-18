@@ -6,6 +6,14 @@
 
 ### Fixed
 
+### Changed
+
+## [1.0.1] 18 September 2026
+
+### Added
+
+### Fixed
+
 - Hightower servers is now dead, its only LSM now (updated readme).
 ### Changed
 
