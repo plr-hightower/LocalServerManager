@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { ServerSettingsS, FileListResponseS } from '@hightower/shared';
+import type { ServerSettingsS, FileListResponseS } from '@lsm/shared';
 import { api } from '@/services/http';
 
 export const useFileStore = defineStore('files', () => {

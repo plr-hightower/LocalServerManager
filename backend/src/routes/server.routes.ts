@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { NextFunction, Request,Response } from "express";
 import { serverController } from "../controllers/server.controller.js";
-import { CreateServerRequestSchema, DeleteServerRequestSchema, RecreateServerRequestSchema, ServerActionSchema, ServerSettingsSchema } from "@hightower/shared";
+import { CreateServerRequestSchema, DeleteServerRequestSchema, RecreateServerRequestSchema, ServerActionSchema, ServerSettingsSchema } from "@lsm/shared";
 import { validate } from "../services/validate.service.js";
 
 const router:Router = Router();

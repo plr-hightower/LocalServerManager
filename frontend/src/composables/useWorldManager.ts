@@ -1,5 +1,5 @@
 import { ref, toValue, type MaybeRefOrGetter } from 'vue';
-import type { ServerSettingsS } from '@hightower/shared';
+import type { ServerSettingsS } from '@lsm/shared';
 import { useWorldStore } from '@/stores/worldStore';
 
 export function useWorldManager(server: MaybeRefOrGetter<ServerSettingsS>) {

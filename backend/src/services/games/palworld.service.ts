@@ -1,5 +1,5 @@
 import { IGameService } from "../../interfaces/IGameService.js";
-import { FileOwnerS, GameManifestS, GameManifestSchema, ServerSettingsS, PalworldSettingsS } from "@hightower/shared";
+import { FileOwnerS, GameManifestS, GameManifestSchema, ServerSettingsS, PalworldSettingsS } from "@lsm/shared";
 import { firstFreePort } from "../serverHelper.service.js";
 
 export const GameService: IGameService = {

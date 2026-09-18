@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import os from 'os';
 import { validate } from '../services/validate.service.js';
-import { FileListRequestSchema, FileDeleteRequestSchema } from '@hightower/shared';
+import { FileListRequestSchema, FileDeleteRequestSchema } from '@lsm/shared';
 import { fileController } from '../controllers/file.controller.js';
 
 const maxUploadFileMb = Number(process.env.MAX_UPLOAD_FILE_MB ?? 32768);

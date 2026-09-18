@@ -1,5 +1,5 @@
 import { IGameService } from "../../interfaces/IGameService.js";
-import { FileOwnerS, GameManifestS, GameManifestSchema, GameSettingsS, ServerSettingsS, MinecraftSettingsS } from "@hightower/shared";
+import { FileOwnerS, GameManifestS, GameManifestSchema, GameSettingsS, ServerSettingsS, MinecraftSettingsS } from "@lsm/shared";
 import { firstFreePort } from "../serverHelper.service.js";
 
 const IMAGE_REPO = 'itzg/minecraft-server';

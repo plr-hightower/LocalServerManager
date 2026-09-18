@@ -12,7 +12,7 @@ Report it privately through GitHub's [private vulnerability reporting](https://d
 
 ## Known and accepted design limitations
 
-These are documented, deliberate properties of the current design, not vulnerabilities , please don't report them as such:
+These are documented, deliberate properties of the current design, not vulnerabilities — please don't report them as such:
 
 - **The web UI has no authentication.** Anyone who can reach the frontend can create and delete servers. Per-server manager passwords only gate management actions on a single server.
 - **The backend has full access to the Docker daemon** via a mounted `/var/run/docker.sock` and runs as `root`. This is equivalent to root on the host and is required for the application's core purpose of managing containers.
@@ -20,4 +20,4 @@ These are documented, deliberate properties of the current design, not vulnerabi
 
 Consequently, this application is intended to run **only on a trusted local network**, never exposed to the internet. If you deploy it beyond that, put it behind a VPN or an authenticating reverse proxy.
 
-Reports of *unintended* weaknesses within that threat model , path traversal in the file manager, authentication bypass of the manager password, command or SQL injection, container escape beyond the above, secrets leaking into logs , are very much wanted.
+Reports of *unintended* weaknesses within that threat model — path traversal in the file manager, authentication bypass of the manager password, command or SQL injection, container escape beyond the above, secrets leaking into logs — are very much wanted.

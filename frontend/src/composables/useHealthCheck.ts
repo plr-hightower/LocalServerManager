@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted, toValue, type MaybeRefOrGetter } from 'vue';
-import type { ContainerStatS, ServerSettingsS } from '@hightower/shared';
+import type { ContainerStatS, ServerSettingsS } from '@lsm/shared';
 import { useServerStore } from '@/stores/serverStore';
 
 const POLL_MS = 1000;

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { ResultSetHeader } from 'mysql2'
-import type { ServerSettingsS } from '@hightower/shared'
+import type { ServerSettingsS } from '@lsm/shared'
 
 vi.mock('../../src/db/pool.js', () => ({
   pool: { execute: vi.fn() },

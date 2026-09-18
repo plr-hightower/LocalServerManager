@@ -82,7 +82,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useServerStore } from '@/stores/serverStore';
-import { RamAllocMbEnum, type ServerSettingsS } from '@hightower/shared';
+import { RamAllocMbEnum, type ServerSettingsS } from '@lsm/shared';
 import { useServerForm } from '@/composables/useServerForm';
 import { useHealthCheck } from '@/composables/useHealthCheck';
 import ServerControls from '@/components/server/ServerControls.vue';

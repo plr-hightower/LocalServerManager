@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { ContainerStatS } from '@hightower/shared';
+import type { ContainerStatS } from '@lsm/shared';
 
 const props = defineProps<{ stats: ContainerStatS | null }>();
 const cpu = computed(() => Math.round(props.stats?.cpuUsagePercent ?? 0));

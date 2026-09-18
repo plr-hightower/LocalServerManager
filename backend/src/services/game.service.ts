@@ -1,4 +1,4 @@
-import type { GameManifestS, ServerSettingsS } from '@hightower/shared';
+import type { GameManifestS, ServerSettingsS } from '@lsm/shared';
 import type { IGameService } from '../interfaces/IGameService.js';
 
 /// <summary>

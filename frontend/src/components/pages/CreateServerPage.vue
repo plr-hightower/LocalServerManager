@@ -97,7 +97,7 @@
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { GameEnum, RamAllocMbEnum, type GameE, type RamAllocMbE, type CreateServerRequestS } from '@hightower/shared';
+import { GameEnum, RamAllocMbEnum, type GameE, type RamAllocMbE, type CreateServerRequestS } from '@lsm/shared';
 import { useServerStore } from '@/stores/serverStore';
 import { useServerForm, type FormField } from '@/composables/useServerForm';
 

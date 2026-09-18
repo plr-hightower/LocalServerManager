@@ -1,4 +1,4 @@
-import { CoreServerSettingsS, CoreServerSettingsSchema, GameE, ServerSettingsS, ServerSettingsSchema, StatusE } from '@hightower/shared';
+import { CoreServerSettingsS, CoreServerSettingsSchema, GameE, ServerSettingsS, ServerSettingsSchema, StatusE } from '@lsm/shared';
 import { pool } from '../db/pool.js';
 import type { RowDataPacket, ResultSetHeader, FieldPacket } from 'mysql2';
 import { Server } from 'http';

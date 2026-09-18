@@ -7,7 +7,7 @@ import {
     FileDeleteRequestSchema,
     FileUploadFieldsSchema,
     FileListResponseSchema,
-} from '@hightower/shared';
+} from '@lsm/shared';
 import { listDirectory, deleteEntry, resolveUploadDir, writeUploadedFile } from '../services/file.service.js';
 import { verifyManagerPassword } from '../services/password.service.js';
 import { getGameService } from '../services/game.service.js';

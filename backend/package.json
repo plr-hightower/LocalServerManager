@@ -10,7 +10,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@hightower/shared": "*",
+    "@lsm/shared": "*",
     "archiver": "^6.0.2",
     "bcryptjs": "^2.4.3",
     "dotenv": "^17.4.2",

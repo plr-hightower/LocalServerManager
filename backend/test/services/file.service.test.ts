@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { ServerSettingsS } from '@hightower/shared'
+import type { ServerSettingsS } from '@lsm/shared'
 
 const mocks = vi.hoisted(() => ({
   getWorldHostPaths: vi.fn(),

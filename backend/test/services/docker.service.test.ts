@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { EventEmitter } from 'node:events'
-import type { ServerSettingsS, GameManifestS } from '@hightower/shared'
+import type { ServerSettingsS, GameManifestS } from '@lsm/shared'
 
 // hoisted so they're available inside vi.mock factories
 const mocks = vi.hoisted(() => {
